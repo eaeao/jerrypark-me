@@ -11,6 +11,15 @@
               <p class="date">{{ portfolio.date }}</p>
             </div>
           </div>
+          <div class="images">
+            <div class="images_bg"></div>
+            <div class="images_content">
+              <a v-for="(_img, idx) in portfolio.PortfolioImages.filter(ele => !ele.isHidden)" :key="idx"
+              target="_blank" :href="`https://jerrypark.me/media/${_img.src}`">
+                <img :src="`https://jerrypark.me/media/${_img.src}`" :alt="`${portfolio.title}_${idx}`" />
+              </a>
+            </div>
+          </div>
           <div class="body" v-html="contents"></div>
         </div>
         <div class="content loading" v-else>
@@ -20,6 +29,9 @@
               <a class="category"></a>
               <p class="date"></p>
             </div>
+          </div>
+          <div class="images">
+            <div class="images_bg"></div>
           </div>
           <div class="body">
             <p style="width: 200px"></p>
@@ -190,6 +202,7 @@
       height: 100%;
       background-color: #FFF;
       box-shadow: 0 0 30px 0 rgb(255, 255, 255);
+      overflow-x: hidden;
       overflow-y: auto;
 
       .btn_back {
@@ -200,6 +213,7 @@
         align-items: center;
         font-size: 22px;
         color: #999;
+        z-index: 1;
         cursor: pointer;
 
         &:hover {
@@ -218,9 +232,10 @@
         width: 768px;
         left: 50%;
         margin-left: -434px;
-        padding: 150px 50px 50px 50px;
+        padding: 150px 30px 50px 30px;
         text-align: left;
         color: #333;
+        z-index: 0;
 
         @media screen and (max-width: $break-small) {
           width: auto;
@@ -230,8 +245,6 @@
 
         .header {
           padding-bottom: 30px;
-          margin-bottom: 30px;
-          border-bottom: 1px solid #ddd;
 
           .title {
             font-size: 35px;
@@ -246,6 +259,44 @@
             .category {
               margin-right: 20px;
               font-weight: bold;
+            }
+          }
+        }
+
+        .images {
+          position: relative;
+          width: 100%;
+          min-height: 250px;
+          margin-bottom: 30px;
+          padding: 20px 0 0 0;
+
+          .images_bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3000px;
+            height: 100%;
+            margin-left: -1500px;
+            background-color: #f5f5f5;
+          }
+
+          .images_content {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: inline-table;
+
+            img {
+              max-width: 362px;
+              max-height: 250px;
+              margin-right: 20px;
+              margin-bottom: 20px;
+              border: 1px solid #e6e6e6;
+              float: left;
+
+              @media screen and (max-width: $break-small) {
+                max-width: 100%;
+              }
             }
           }
         }
