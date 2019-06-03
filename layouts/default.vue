@@ -44,7 +44,7 @@
 </script>
 
 <style lang="scss" scoped>
-  $break-small: 1000px;
+  $break-small: 1200px;
 
   .wrap {
     margin-left: auto;

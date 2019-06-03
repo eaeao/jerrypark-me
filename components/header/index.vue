@@ -41,6 +41,8 @@
 </script>
 
 <style lang="scss" scoped>
+  $break-small: 1200px;
+
   .head-content {
     height: 34px;
     padding: 0 15px 20px 15px;
@@ -77,6 +79,26 @@
           &.active, &:hover {
             background-color: #72af2a;
           }
+        }
+      }
+    }
+
+    @media screen and (max-width: $break-small) {
+      height: auto;
+      text-align: center;
+
+      .jerrypark_cap {
+        top: 0;
+        margin-bottom: 20px;
+      }
+
+      .menu {
+        display: block;
+        float: none;
+        text-align: center;
+
+        li {
+          display: inline-block;
         }
       }
     }

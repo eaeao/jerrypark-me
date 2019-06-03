@@ -47,7 +47,7 @@
       width: 255px;
       height: 380px;
       background-color: #FFF;
-      border: 0 solid black;
+      border: 1px solid rgba(0, 0, 0, 0.08);
       border-radius: 10px;
       box-shadow: 0 0 40px 0 rgba(0, 0, 0, 0.03);
       cursor: pointer;
@@ -55,7 +55,7 @@
       transform: scale(1, 1);
 
       &:hover {
-        box-shadow: 0 0 40px 0 rgba(0, 0, 0, 0.09);
+        box-shadow: 0 0 40px 0 rgba(0, 0, 0, 0.1);
         transform: scale(1.04, 1.04);
         transition: all 0.1s;
 
