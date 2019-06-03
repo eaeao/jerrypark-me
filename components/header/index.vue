@@ -75,7 +75,7 @@
           cursor: pointer;
 
           &.active, &:hover {
-            background-color: #5755da;
+            background-color: #72af2a;
           }
         }
       }

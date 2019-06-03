@@ -217,8 +217,8 @@
         position: relative;
         width: 768px;
         left: 50%;
-        margin-left: -384px;
-        padding: 150px 50px;
+        margin-left: -434px;
+        padding: 150px 50px 50px 50px;
         text-align: left;
         color: #333;
 
@@ -236,7 +236,7 @@
           .title {
             font-size: 35px;
             font-weight: bold;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
           }
 
           .info {
