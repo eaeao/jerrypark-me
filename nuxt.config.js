@@ -43,7 +43,9 @@ module.exports = {
   plugins: [
     // ssr: false to only include it on client-side
     {src: '~plugins/global.js', ssr: true},
-    {src: '~plugins/markdown.js', ssr: true}
+    {src: '~plugins/markdown.js', ssr: true},
+    {src: '~plugins/ga.js', ssr: false},
+    {src: '~plugins/hotjar.js', ssr: false}
   ]
 }
 

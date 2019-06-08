@@ -12,3 +12,5 @@ dist
 
 .idea
 plugins/global.js
+plugins/hotjar.js
+plugins/ga.js
