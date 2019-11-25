@@ -2,12 +2,16 @@
   <div class="card">
     <transition name="list">
       <div v-show="show" class="container" :title="portfolio.title" @click="clickCard(portfolio.title)">
-        <img class="card_image" :src="`https://jerrypark.me/media/${portfolio.cover}`" :alt="portfolio.title" @load="loadImg">
-        <div class="card_body">
-          <p class="title">{{ portfolio.title }}</p>
-          <p class="date">{{ portfolio.date }}</p>
-          <div class="category">
-            <p class="title">{{ portfolio.category.title }}</p>
+        <img class="is_main_image" src="/static/img/tab.png" alt="추천" title="바쁘시면 이거라도.." v-if="portfolio.isMain" />
+        <div class="hiddenWrapper">
+          <img class="preview_image" :src="`https://jerrypark.me/media/${portfolio.cover}`" :alt="portfolio.title"
+               @load="loadImg">
+          <div class="card_body">
+            <p class="title">{{ portfolio.title }}</p>
+            <p class="date">{{ portfolio.date }}</p>
+            <div class="category">
+              <p class="title">{{ portfolio.category.title }}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -28,7 +32,7 @@
       loadImg(e) {
         this.show = true
       },
-      clickCard(_title){
+      clickCard(_title) {
         this.$router.push({path: `/article/${encodeURIComponent(_title.replace(/ /gi, '―'))}`})
       }
     }
@@ -51,7 +55,6 @@
       border-radius: 10px;
       box-shadow: 0 0 40px 0 rgba(0, 0, 0, 0.03);
       cursor: pointer;
-      overflow: hidden;
       transform: scale(1, 1);
 
       &:hover {
@@ -59,12 +62,23 @@
         transform: scale(1.04, 1.04);
         transition: all 0.1s;
 
-        .card_image {
+        .preview_image {
           transform: scale(1.05, 1.05);
         }
       }
 
-      .card_image {
+      .hiddenWrapper {
+        overflow: hidden;
+      }
+
+      .is_main_image {
+        position: absolute;
+        right: 10px;
+        top: -23px;
+        z-index: 1;
+      }
+
+      .preview_image {
         position: relative;
         width: 100%;
         height: 220px;

@@ -28,7 +28,7 @@ export const actions = {
     res = await axios.post(Vue.prototype.$apiUrl, {
       query: `{
   portfolios(category: "${req.originalUrl.replace(/\//gi, '').toUpperCase()}") {
-    title date cover category { title }
+    title date cover isMain category { title }
   }
 }`
     });
@@ -43,7 +43,7 @@ export const actions = {
     let {data} = await axios.post(Vue.prototype.$apiUrl, {
       query: `{
   portfolios(category: "${query === 'ALL' ? '' : query}") {
-    title date cover category { title }
+    title date cover isMain category { title }
   }
 }`
     });
