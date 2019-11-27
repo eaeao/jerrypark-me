@@ -14,8 +14,7 @@
           <div class="images">
             <div class="images_bg"></div>
             <div class="images_content">
-              <a v-for="(_img, idx) in portfolioImages" :key="idx"
-              target="_blank" :href="`https://jerrypark.me/media/${_img.src}`">
+              <a v-for="(_img, idx) in portfolioImages" :key="idx" @click="clickImage(idx)">
                 <img :src="`https://jerrypark.me/media/${_img.src}`" :alt="`${portfolio.title}_${idx}`" />
               </a>
             </div>
@@ -42,7 +41,7 @@
         </div>
       </div>
     </transition>
-<!--    <image-viewer :images="portfolioImages" :selectedImageIndex="selectedImageIndex" />-->
+    <image-viewer :images="portfolioImages" :selectedImageIndex="selectedImageIndex" />
   </main>
 </template>
 
@@ -80,11 +79,11 @@
       return {
         show: false,
         portfolio: null,
-        selectedImageIndex: 0
+        selectedImageIndex: -1
       }
     },
     async asyncData({params, from, error}) {
-      let title = decodeURIComponent(params.title).replace(/―/gi, ' ');
+      let title = decodeURIComponent(params.pathMatch.split('/')[0]).replace(/―/gi, ' ');
       let portfolio = null;
       if (!from) {
         let {data} = await axios.post(Vue.prototype.$apiUrl, {
@@ -116,7 +115,19 @@
         return this.portfolio ? this.portfolio.PortfolioImages.filter(ele => !ele.isHidden) : []
       }
     },
+    watch: {
+      '$route' (_route) {
+          this.openImageViewer()
+      }
+    },
     methods: {
+      openImageViewer() {
+          if (this.$route.query.image !== undefined && this.$route.query.image > -1) {
+              this.selectedImageIndex = this.$route.query.image
+          } else {
+              this.selectedImageIndex = -1
+          }
+      },
       goBack() {
         this.show = false;
       },
@@ -128,7 +139,7 @@
         this.setCategory(this.portfolio.category.title);
       },
       async getPortfolio() {
-        let title = decodeURIComponent(this.$route.params.title).replace(/―/gi, ' ');
+        let title = decodeURIComponent(this.$route.params.pathMatch.split('/')[0]).replace(/―/gi, ' ');
         let {data} = await axios.post(this.$apiUrl, {
           query: `{
   portfolio(title: "${title}") {
@@ -150,6 +161,9 @@
           window.open(self.dataset.href, self.target);
         }
       },
+      clickImage(index) {
+          this.$router.push({ query: { image: index } })
+      },
       strip(con) {
         return `${con}`.replace(/<[^>]*>?/gm, '').replace(/\r?\n/gm, ' ');
       },
@@ -158,11 +172,14 @@
       })
     },
     mounted() {
-      window.click_a = this.clickA;
+      if (window) {
+          window.click_a = this.clickA;
+      }
       if (!this.portfolio) {
         this.getPortfolio()
       }
       this.show = true;
+      this.openImageViewer()
     }
   }
 </script>
