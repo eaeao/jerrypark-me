@@ -13,7 +13,13 @@
             @page-change="pageChange"
             @transition-end="transitionEnd"
           >
-            <component :is="slide" v-for="(image, index) in images" :key="index">
+            <component
+              :is="slide"
+              v-for="(image, index) in images"
+              :key="index"
+              :data-src="`https://jerrypark.me/media/${image.src}`"
+              @slide-click="slideClick"
+            >
               <img class="image" :src="`https://jerrypark.me/media/${image.src}`"/>
             </component>
           </component>
@@ -46,6 +52,9 @@
             },
             transitionEnd() {
                 this.$router.replace({query: {image: this.index}})
+            },
+            slideClick(dataset) {
+                window.open(dataset.src, '_blank')
             }
         },
         mounted() {
@@ -86,9 +95,6 @@
           }
         }
       }
-    }
-
-    @media screen and (max-width: $break-small) {
     }
 
     .slide-fade-enter-active {
