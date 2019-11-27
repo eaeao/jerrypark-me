@@ -5,7 +5,7 @@
         <p class="btn_back" @click="goBack"><i class="material-icons">arrow_back</i> 뒤로</p>
         <div class="content" v-if="portfolio">
           <div class="header">
-            <p class="title">{{ portfolio.title }}</p>
+            <H1 class="title">{{ portfolio.title }}</H1>
             <div class="info">
               <a class="category" @click="clickCategory">{{ portfolio.category.title }}</a>
               <p class="date">{{ portfolio.date }}</p>
@@ -15,7 +15,7 @@
             <div class="images_bg"></div>
             <div class="images_content">
               <a v-for="(_img, idx) in portfolioImages" :key="idx" @click="clickImage(idx)">
-                <img :src="`https://jerrypark.me/media/${_img.src}`" :alt="`${portfolio.title}_${idx}`" />
+                <img :src="`https://jerrypark.me/media/${_img.src}`" :alt="`${portfolio.title}_${idx}`"/>
               </a>
             </div>
           </div>
@@ -23,7 +23,7 @@
         </div>
         <div class="content loading" v-else>
           <div class="header">
-            <p class="title"></p>
+            <H1 class="title"></H1>
             <div class="info">
               <a class="category"></a>
               <p class="date"></p>
@@ -41,53 +41,53 @@
         </div>
       </div>
     </transition>
-    <image-viewer :images="portfolioImages" :selectedImageIndex="selectedImageIndex" />
+    <image-viewer :images="portfolioImages" :selectedImageIndex="selectedImageIndex"/>
   </main>
 </template>
 
 <script>
-  import Vue from 'vue'
-  import {mapActions} from 'vuex'
-  import axios from 'axios'
-  import ImageViewer from '~/components/imageViewer/index'
+    import Vue from 'vue'
+    import {mapActions} from 'vuex'
+    import axios from 'axios'
+    import ImageViewer from '~/components/imageViewer/index'
 
-  export default {
-    head () {
-      return this.portfolio ? {
-        title: `[${this.portfolio.category.title}] ${this.portfolio.title} | JERRYPARK.ME`,
-        meta: [
-          {
-            title: `[${this.portfolio.category.title}] ${this.portfolio.title}`,
-            keywords: `[${this.portfolio.category.title}] ${this.portfolio.title}`.split(' ').join(', '),
-            author: 'JerryPark, eaeao, 박동혁',
-            description: this.strip(this.contents).slice(0, 160),
-            content: this.strip(this.contents).slice(0, 160),
-            'og:image': this.portfolio.PortfolioImages ? `https://jerrypark.me/media/${this.portfolio.PortfolioImages[0].src}` : 'https://dev.jerrypark.me/static/img/jerrypark_cap.png',
-            'og:type': 'website',
-            'og:site_name': `JERRYPARK.ME`,
-            'og:title': `[${this.portfolio.category.title}] ${this.portfolio.title}`,
-            'og:description': this.strip(this.contents).slice(0, 160),
-            'og:url': `https://jerrypark.me${this.$route.path}`,
-          }
-        ]
-      } : {}
-    },
-    components: {
-        'image-viewer': ImageViewer
-    },
-    data() {
-      return {
-        show: false,
-        portfolio: null,
-        selectedImageIndex: -1
-      }
-    },
-    async asyncData({params, from, error}) {
-      let title = decodeURIComponent(params.title).replace(/―/gi, ' ');
-      let portfolio = null;
-      if (!from) {
-        let {data} = await axios.post(Vue.prototype.$apiUrl, {
-          query: `{
+    export default {
+        head() {
+            return this.portfolio ? {
+                title: `[${this.portfolio.category.title}] ${this.portfolio.title} | JERRYPARK.ME`,
+                meta: [
+                    {
+                        title: `[${this.portfolio.category.title}] ${this.portfolio.title}`,
+                        keywords: `[${this.portfolio.category.title}] ${this.portfolio.title}`.split(' ').join(', '),
+                        author: 'JerryPark, eaeao, 박동혁',
+                        description: this.strip(this.contents).slice(0, 160),
+                        content: this.strip(this.contents).slice(0, 160)
+                    },
+                    { property: 'og:image', content: this.portfolio.PortfolioImages ? `https://jerrypark.me/media/${this.portfolio.PortfolioImages[0].src}` : 'https://dev.jerrypark.me/static/img/jerrypark_cap.png' },
+                    { property: 'og:type', content: 'website' },
+                    { property: 'og:site_name', content: 'JERRYPARK.ME' },
+                    { property: 'og:title', content: `[${this.portfolio.category.title}] ${this.portfolio.title}`, },
+                    { property: 'og:description', content: this.strip(this.contents).slice(0, 160), },
+                    { property: 'og:url', content: `https://jerrypark.me${this.$route.path}` }
+                ]
+            } : {}
+        },
+        components: {
+            'image-viewer': ImageViewer
+        },
+        data() {
+            return {
+                show: false,
+                portfolio: null,
+                selectedImageIndex: -1
+            }
+        },
+        async asyncData({params, from, error}) {
+            let title = decodeURIComponent(params.title).replace(/―/gi, ' ');
+            let portfolio = null;
+            if (!from) {
+                let {data} = await axios.post(Vue.prototype.$apiUrl, {
+                    query: `{
   portfolio(title: "${title}") {
     title con safe date category { title }
     PortfolioImages {
@@ -95,53 +95,53 @@
     }
   }
 }`
-        });
-        if (data.data.portfolio) {
-          portfolio = data.data.portfolio;
-        } else {
-          error({ statusCode: 404, message: 'Article not found' })
-        }
-      }
-      return {show: !from, portfolio}
-    },
-    computed: {
-      category() {
-        return this.$store.state.category;
-      },
-      contents() {
-        return this.portfolio ? this.$markdown.toHTML(this.portfolio.con) : ""
-      },
-      portfolioImages() {
-        return this.portfolio ? this.portfolio.PortfolioImages.filter(ele => !ele.isHidden) : []
-      }
-    },
-    watch: {
-      '$route' (_route) {
-          this.openImageViewer()
-      }
-    },
-    methods: {
-      openImageViewer() {
-          if (this.$route.query.image !== undefined && this.$route.query.image > -1) {
-              this.selectedImageIndex = this.$route.query.image
-          } else {
-              this.selectedImageIndex = -1
-          }
-      },
-      goBack() {
-        this.show = false;
-      },
-      afterLeave() {
-        this.$router.replace(this.category === 'ALL' ? '/' : `/${this.category.toLowerCase()}/`);
-      },
-      clickCategory() {
-        this.show = false;
-        this.setCategory(this.portfolio.category.title);
-      },
-      async getPortfolio() {
-        let title = decodeURIComponent(this.$route.params.title).replace(/―/gi, ' ');
-        let {data} = await axios.post(this.$apiUrl, {
-          query: `{
+                });
+                if (data.data.portfolio) {
+                    portfolio = data.data.portfolio;
+                } else {
+                    error({statusCode: 404, message: 'Article not found'})
+                }
+            }
+            return {show: !from, portfolio}
+        },
+        computed: {
+            category() {
+                return this.$store.state.category;
+            },
+            contents() {
+                return this.portfolio ? this.$markdown.toHTML(this.portfolio.con) : ""
+            },
+            portfolioImages() {
+                return this.portfolio ? this.portfolio.PortfolioImages.filter(ele => !ele.isHidden) : []
+            }
+        },
+        watch: {
+            '$route'(_route) {
+                this.openImageViewer()
+            }
+        },
+        methods: {
+            openImageViewer() {
+                if (this.$route.query.image !== undefined && this.$route.query.image > -1) {
+                    this.selectedImageIndex = this.$route.query.image
+                } else {
+                    this.selectedImageIndex = -1
+                }
+            },
+            goBack() {
+                this.show = false;
+            },
+            afterLeave() {
+                this.$router.replace(this.category === 'ALL' ? '/' : `/${this.category.toLowerCase()}/`);
+            },
+            clickCategory() {
+                this.show = false;
+                this.setCategory(this.portfolio.category.title);
+            },
+            async getPortfolio() {
+                let title = decodeURIComponent(this.$route.params.title).replace(/―/gi, ' ');
+                let {data} = await axios.post(this.$apiUrl, {
+                    query: `{
   portfolio(title: "${title}") {
     title con safe date category { title }
     PortfolioImages {
@@ -149,39 +149,39 @@
     }
   }
 }`
-        });
-        if (data.data.portfolio) {
-          this.portfolio = data.data.portfolio;
+                });
+                if (data.data.portfolio) {
+                    this.portfolio = data.data.portfolio;
+                }
+            },
+            clickA(self) {
+                if (!self.target) {
+                    this.$router.push(self.dataset.href);
+                } else {
+                    window.open(self.dataset.href, self.target);
+                }
+            },
+            clickImage(index) {
+                this.$router.push({query: {image: index}})
+            },
+            strip(con) {
+                return `${con}`.replace(/<[^>]*>?/gm, '').replace(/\r?\n/gm, ' ');
+            },
+            ...mapActions({
+                setCategory: 'setCategory'
+            })
+        },
+        mounted() {
+            if (window) {
+                window.click_a = this.clickA;
+            }
+            if (!this.portfolio) {
+                this.getPortfolio()
+            }
+            this.show = true;
+            this.openImageViewer()
         }
-      },
-      clickA(self) {
-        if (!self.target) {
-          this.$router.push(self.dataset.href);
-        } else {
-          window.open(self.dataset.href, self.target);
-        }
-      },
-      clickImage(index) {
-          this.$router.push({ query: { image: index } })
-      },
-      strip(con) {
-        return `${con}`.replace(/<[^>]*>?/gm, '').replace(/\r?\n/gm, ' ');
-      },
-      ...mapActions({
-        setCategory: 'setCategory'
-      })
-    },
-    mounted() {
-      if (window) {
-          window.click_a = this.clickA;
-      }
-      if (!this.portfolio) {
-        this.getPortfolio()
-      }
-      this.show = true;
-      this.openImageViewer()
     }
-  }
 </script>
 
 <style lang="scss">
@@ -194,7 +194,7 @@
         .body {
           line-height: 1.7;
 
-          h1 {
+          h2 {
             font-size: 1.3rem;
             font-weight: 700;
             margin-bottom: 5px;
@@ -368,9 +368,11 @@
     .slide-fade-enter-active {
       transition: all .4s ease;
     }
+
     .slide-fade-leave-active {
       transition: all .4s ease;
     }
+
     .slide-fade-enter, .slide-fade-leave-to {
       transform: translateY(100%);
     }

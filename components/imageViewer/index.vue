@@ -2,6 +2,9 @@
   <div class="image_viewer">
     <transition name="slide-fade">
       <div v-show="selectedImageIndex > -1" class="container">
+        <div class="header">
+          <p class="btn_back" @click="goBack"><i class="material-icons">close</i> 닫기</p>
+        </div>
         <no-ssr>
           <component
             v-if="carousel"
@@ -47,6 +50,9 @@
             }
         },
         methods: {
+            goBack() {
+                this.$router.back()
+            },
             pageChange(index) {
                 this.index = index
             },
@@ -79,9 +85,40 @@
       justify-content: center;
       align-items: center;
 
+      .header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 20px;
+        text-align: right;
+        background: black;
+        background: linear-gradient(180deg, rgb(0, 0, 0) 0%, rgb(0, 0, 0) 30%, rgba(0, 0, 0, 0) 100%);
+        z-index: 1;
+
+        .btn_back {
+          font-size: 22px;
+          color: #FFF;
+          display: inline-flex;
+          justify-content: center;
+          align-items: center;
+          cursor: pointer;
+
+          &:hover {
+            border-bottom: 1px solid #FFF;
+          }
+
+          i {
+            font-size: 28px;
+            margin-right: 5px;
+          }
+        }
+      }
+
       .VueCarousel {
         width: 100%;
         height: 90%;
+        padding-top: 50px;
         align-items: center;
         justify-content: center;
 
