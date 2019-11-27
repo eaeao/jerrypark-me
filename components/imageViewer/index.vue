@@ -1,106 +1,107 @@
 <template>
-  <header class="head-content">
-    <router-link to="/" exact><img class="jerrypark_cap" src="/static/img/jerrypark_cap.png" alt="JERRYPARK.ME"></router-link>
-    <ul class="menu">
-      <li>
-        <a :class="{'active': category === 'ALL'}" @click="clickCategory('/')">ALL</a>
-      </li>
-      <li v-for="_category in categories" :key="_category.index">
-        <a :class="{'active': category === _category.title}"
-           @click="clickCategory(`/${_category.title.toLowerCase()}/`)">{{ _category.title }}</a>
-      </li>
-    </ul>
-  </header>
+  <div class="image_viewer">
+    <transition name="slide-fade">
+      <div v-show="selectedImageIndex > -1" class="container">
+        <no-ssr>
+          <component
+            v-if="carousel"
+            :is="carousel"
+            :perPage="1"
+            :navigationEnabled="true"
+            :navigateTo="[selectedImageIndex, false]"
+            :paginationActiveColor="'#72af2a'"
+            @page-change="pageChange"
+            @transition-end="transitionEnd"
+          >
+            <component :is="slide" v-for="(image, index) in images" :key="index">
+              <img class="image" :src="`https://jerrypark.me/media/${image.src}`"/>
+            </component>
+          </component>
+        </no-ssr>
+      </div>
+    </transition>
+  </div>
 </template>
 
 <script>
-  import {mapActions} from 'vuex'
-
-  export default {
-    name: "head-content",
-    computed: {
-      categories() {
-        return this.$store.state.categories
-      },
-      category() {
-        return this.$store.state.category;
-      }
-    },
-    methods: {
-      clickCategory(_url) {
-        this.$router.push({path: _url})
-      },
-      ...mapActions({
-        getCategories: 'getCategories',
-      })
-    },
-    mounted() {
-      // this.getCategories()
+    export default {
+        name: "image-viewer",
+        props: ['images', 'selectedImageIndex'],
+        data() {
+            return {
+                index: 0
+            }
+        },
+        computed: {
+            carousel() {
+                return process.client ? require('vue-carousel').Carousel : null
+            },
+            slide() {
+                return process.client ? require('vue-carousel').Slide : null
+            }
+        },
+        methods: {
+            pageChange(index) {
+                this.index = index
+            },
+            transitionEnd() {
+                this.$router.replace({query: {image: this.index}})
+            }
+        },
+        mounted() {
+            this.index = this.selectedImageIndex
+        }
     }
-  }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
   $break-small: 1200px;
 
-  .head-content {
-    height: 34px;
-    padding: 0 15px 20px 15px;
-    border-bottom: 1px solid #d9dee7;
-    text-align: left;
+  .image_viewer {
 
-    .jerrypark_cap {
-      position: relative;
-      top: -20px;
+    .container {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      background-color: #000000a8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
 
-      &:hover {
-        filter: brightness(150%);
-        filter: contrast(80%);
-      }
-    }
+      .VueCarousel {
+        width: 100%;
+        height: 90%;
+        align-items: center;
+        justify-content: center;
 
-    .menu {
-      display: table;
-      float: right;
-      line-height: 35px;
+        .VueCarousel-inner {
+          width: 100%;
+          height: 100% !important;
 
-      li {
-        display: table-cell;
-        padding: 0 3px;
-
-        a {
-          background-color: #797e8a;
-          color: #FFF;
-          padding: 5px 10px;
-          border-radius: 5px;
-          text-decoration: none;
-          cursor: pointer;
-
-          &.active, &:hover {
-            background-color: #72af2a;
+          .image {
+            max-width: 90%;
+            max-height: 100%;
           }
         }
       }
     }
 
     @media screen and (max-width: $break-small) {
-      height: auto;
-      text-align: center;
+    }
 
-      .jerrypark_cap {
-        top: 0;
-        margin-bottom: 20px;
-      }
+    .slide-fade-enter-active {
+      transition: all .4s ease;
+    }
 
-      .menu {
-        display: block;
-        float: none;
-        text-align: center;
+    .slide-fade-leave-active {
+      transition: all .4s ease;
+    }
 
-        li {
-          display: inline-block;
-        }
-      }
+    .slide-fade-enter, .slide-fade-leave-to {
+      filter: alpha(opacity=0);
+      opacity: 0;
     }
   }
 </style>

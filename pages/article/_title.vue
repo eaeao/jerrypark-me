@@ -83,7 +83,7 @@
       }
     },
     async asyncData({params, from, error}) {
-      let title = decodeURIComponent(params.pathMatch.split('/')[0]).replace(/―/gi, ' ');
+      let title = decodeURIComponent(params.title).replace(/―/gi, ' ');
       let portfolio = null;
       if (!from) {
         let {data} = await axios.post(Vue.prototype.$apiUrl, {
@@ -139,7 +139,7 @@
         this.setCategory(this.portfolio.category.title);
       },
       async getPortfolio() {
-        let title = decodeURIComponent(this.$route.params.pathMatch.split('/')[0]).replace(/―/gi, ' ');
+        let title = decodeURIComponent(this.$route.params.title).replace(/―/gi, ' ');
         let {data} = await axios.post(this.$apiUrl, {
           query: `{
   portfolio(title: "${title}") {
