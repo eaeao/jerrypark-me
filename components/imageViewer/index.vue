@@ -13,6 +13,7 @@
             :navigationEnabled="true"
             :navigateTo="[selectedImageIndex, false]"
             :paginationActiveColor="'#72af2a'"
+            :paginationPadding="5"
             @page-change="pageChange"
             @transition-end="transitionEnd"
           >
@@ -51,7 +52,7 @@
         },
         methods: {
             goBack() {
-                this.$router.back()
+                this.$router.replace({query: {}})
             },
             pageChange(index) {
                 this.index = index

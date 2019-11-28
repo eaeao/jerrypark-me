@@ -9,6 +9,7 @@
         <a :class="{'active': category === _category.title}"
            @click="clickCategory(`/${_category.title.toLowerCase()}/`)">{{ _category.title }}</a>
       </li>
+      <li class="print"><a title="인쇄" @click="goArticles"><i class="material-icons">print</i></a></li>
     </ul>
   </header>
 </template>
@@ -29,6 +30,9 @@
     methods: {
       clickCategory(_url) {
         this.$router.push({path: _url})
+      },
+      goArticles() {
+          this.$router.push({path: '/articles/'})
       },
       ...mapActions({
         getCategories: 'getCategories',
@@ -80,6 +84,31 @@
             background-color: #72af2a;
           }
         }
+
+        &.print {
+          position: relative;
+          width: 50px;
+          padding: 0;
+
+          a {
+            position: absolute;
+            width: 50px;
+            background-color: unset;
+            color: #797e8a;
+            line-height: normal;
+            cursor: pointer;
+            top: -5px;
+            text-align: center;
+
+            &.active, &:hover {
+              color: #72af2a;
+            }
+
+            i {
+              font-size: 30px;
+            }
+          }
+        }
       }
     }
 
@@ -99,6 +128,10 @@
 
         li {
           display: inline-block;
+
+          &.print {
+            display: none;
+          }
         }
       }
     }
