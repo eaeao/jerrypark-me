@@ -14,9 +14,8 @@
 </template>
 
 <script>
-    import Vue from 'vue'
     import {mapActions} from 'vuex'
-    import axios from 'axios'
+    import {getPortfolio} from '~/store/api'
     import Article from '~/components/article/index'
     import ImageViewer from '~/components/imageViewer/index'
 
@@ -52,27 +51,19 @@
                 selectedImageIndex: -1
             }
         },
-        async asyncData({params, from, error}) {
+        asyncData({params, from, error}) {
             let title = decodeURIComponent(params.title).replace(/―/gi, ' ');
-            let portfolio = null;
-            if (!from) {
-                let {data} = await axios.post(Vue.prototype.$apiUrl, {
-                    query: `{
-  portfolio(title: "${title}") {
-    title con safe date category { title }
-    PortfolioImages {
-      src isHidden
-    }
-  }
-}`
-                });
-                if (data.data.portfolio) {
-                    portfolio = data.data.portfolio;
-                } else {
-                    error({statusCode: 404, message: 'Article not found'})
+            return getPortfolio({ title }).then(({ data }) => {
+                let portfolio = null;
+                if (!from) {
+                    if (data.data.portfolio) {
+                        portfolio = data.data.portfolio
+                    } else {
+                        error({statusCode: 404, message: 'Article not found'})
+                    }
                 }
-            }
-            return {show: !from, portfolio}
+                return {show: !from, portfolio}
+            })
         },
         computed: {
             category() {
@@ -111,21 +102,13 @@
                 this.show = false;
                 this.setCategory(this.portfolio.category.title);
             },
-            async getPortfolio() {
+            getPortfolio() {
                 let title = decodeURIComponent(this.$route.params.title).replace(/―/gi, ' ');
-                let {data} = await axios.post(this.$apiUrl, {
-                    query: `{
-  portfolio(title: "${title}") {
-    title con safe date category { title }
-    PortfolioImages {
-      src isHidden
-    }
-  }
-}`
-                });
-                if (data.data.portfolio) {
-                    this.portfolio = data.data.portfolio;
-                }
+                getPortfolio({ title }).then(({ data }) => {
+                    if (data.data.portfolio) {
+                        this.portfolio = data.data.portfolio
+                    }
+                })
             },
             clickA(self) {
                 if (!self.target) {

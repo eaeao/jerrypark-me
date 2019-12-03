@@ -1,42 +1,41 @@
 <template>
   <div class="card">
     <transition name="list">
-      <div v-show="show" class="container" :title="portfolio.title" @click="clickCard(portfolio.title)">
-        <img class="is_main_image" src="/static/img/tab.png" alt="추천" title="바쁘시면 이거라도.." v-if="portfolio.isMain" />
-        <div class="hiddenWrapper">
-          <img class="preview_image" :src="`https://jerrypark.me/media/${portfolio.cover}`" :alt="portfolio.title"
-               @load="loadImg">
-          <div class="card_body">
-            <p class="title">{{ portfolio.title }}</p>
-            <p class="date">{{ portfolio.date }}</p>
-            <div class="category">
-              <p class="title">{{ portfolio.category.title }}</p>
+      <nuxt-link :to="`/article/${encodeURIComponent(portfolio.title.replace(/ /gi, '―'))}`">
+        <div v-show="show" class="container" :title="portfolio.title">
+          <img class="is_main_image" src="/static/img/tab.png" alt="추천" title="바쁘시면 이거라도.." v-if="portfolio.isMain" />
+          <div class="hiddenWrapper">
+            <img class="preview_image" :src="`https://jerrypark.me/media/${portfolio.cover}`" :alt="portfolio.title"
+                 @load="loadImg">
+            <div class="card_body">
+              <p class="title">{{ portfolio.title }}</p>
+              <p class="date">{{ portfolio.date }}</p>
+              <div class="category">
+                <p class="title">{{ portfolio.category.title }}</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </nuxt-link>
     </transition>
   </div>
 </template>
 
 <script>
-  export default {
-    name: "card",
-    props: ['portfolio'],
-    data() {
-      return {
-        show: false
-      }
-    },
-    methods: {
-      loadImg(e) {
-        this.show = true
-      },
-      clickCard(_title) {
-        this.$router.push({path: `/article/${encodeURIComponent(_title.replace(/ /gi, '―'))}`})
-      }
+    export default {
+        name: "card",
+        props: ['portfolio'],
+        data() {
+            return {
+                show: false
+            }
+        },
+        methods: {
+            loadImg(e) {
+                this.show = true
+            }
+        }
     }
-  }
 </script>
 
 <style lang="scss" scoped>

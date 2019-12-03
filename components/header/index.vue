@@ -15,33 +15,26 @@
 </template>
 
 <script>
-  import {mapActions} from 'vuex'
 
-  export default {
-    name: "head-content",
-    computed: {
-      categories() {
-        return this.$store.state.categories
-      },
-      category() {
-        return this.$store.state.category;
-      }
-    },
-    methods: {
-      clickCategory(_url) {
-        this.$router.push({path: _url})
-      },
-      goArticles() {
-          this.$router.push({path: '/articles/'})
-      },
-      ...mapActions({
-        getCategories: 'getCategories',
-      })
-    },
-    mounted() {
-      // this.getCategories()
+    export default {
+        name: "head-content",
+        computed: {
+            categories() {
+                return this.$store.state.categories
+            },
+            category() {
+                return this.$store.state.category;
+            }
+        },
+        methods: {
+            clickCategory(_url) {
+                this.$router.push({path: _url})
+            },
+            goArticles() {
+                this.$router.push({path: '/articles/'})
+            }
+        }
     }
-  }
 </script>
 
 <style lang="scss" scoped>

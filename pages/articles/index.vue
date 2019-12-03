@@ -22,9 +22,8 @@
 </template>
 
 <script>
-    import Vue from 'vue'
     import {mapActions} from 'vuex'
-    import axios from 'axios'
+    import {getPortfolios} from '~/store/api'
     import Article from '~/components/article/index'
 
     export default {
@@ -57,26 +56,18 @@
                 portfolios: null
             }
         },
-        async asyncData({params, from, error}) {
-            let portfolios = null;
-            if (!from) {
-                let {data} = await axios.post(Vue.prototype.$apiUrl, {
-                    query: `{
-  portfolios(category: "") {
-    title con safe date category { title }
-    PortfolioImages {
-      src isHidden
-    }
-  }
-}`
-                });
-                if (data.data.portfolios) {
-                    portfolios = [data.data.portfolios[data.data.portfolios.length - 1], ...data.data.portfolios.slice(0, data.data.portfolios.length - 1)]
-                } else {
-                    error({statusCode: 404, message: 'Article not found'})
+        asyncData({params, from, error}) {
+            return getPortfolios().then(({ data }) => {
+                let portfolios = null;
+                if (!from) {
+                    if (data.data.portfolios) {
+                        portfolios = [data.data.portfolios[data.data.portfolios.length - 1], ...data.data.portfolios.slice(0, data.data.portfolios.length - 1)]
+                    } else {
+                        error({statusCode: 404, message: 'Article not found'})
+                    }
                 }
-            }
-            return {show: !from, portfolios}
+                return {show: !from, portfolios}
+            })
         },
         computed: {
             category() {
@@ -100,20 +91,12 @@
             afterLeave() {
                 this.$router.replace(this.category === 'ALL' ? '/' : `/${this.category.toLowerCase()}/`);
             },
-            async getPortfolio() {
-                let {data} = await axios.post(this.$apiUrl, {
-                    query: `{
-  portfolios(category: "") {
-    title con safe date category { title }
-    PortfolioImages {
-      src isHidden
-    }
-  }
-}`
-                });
-                if (data.data.portfolios) {
-                    this.portfolios = [data.data.portfolios[data.data.portfolios.length - 1], ...data.data.portfolios.slice(0, data.data.portfolios.length - 1)]
-                }
+            getPortfolio() {
+                getPortfolios().then(({ data }) => {
+                    if (data.data.portfolios) {
+                        this.portfolios = [data.data.portfolios[data.data.portfolios.length - 1], ...data.data.portfolios.slice(0, data.data.portfolios.length - 1)]
+                    }
+                })
             },
             clickA(self) {
                 if (!self.target) {
@@ -144,7 +127,7 @@
     .container {
 
       .content {
-        border-bottom: 1px solid #f0f0f0;
+        border-bottom: 1px dashed #e0e0e0;
 
         .body {
           line-height: 1.7;
