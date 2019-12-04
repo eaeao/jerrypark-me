@@ -5,7 +5,7 @@
         <div class="header">
           <p class="btn_back" @click="goBack"><i class="material-icons">close</i> 닫기</p>
         </div>
-        <no-ssr>
+        <client-only>
           <component
             v-if="carousel"
             :is="carousel"
@@ -27,7 +27,7 @@
               <img class="image" :src="`https://jerrypark.me/media/${image.src}`"/>
             </component>
           </component>
-        </no-ssr>
+        </client-only>
       </div>
     </transition>
   </div>
