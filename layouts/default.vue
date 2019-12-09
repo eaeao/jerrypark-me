@@ -131,7 +131,7 @@
                 position: relative !important;
                 width: auto !important;
                 height: auto !important;
-                box-shadow: unset !important;
+                box-shadow: none !important;
                 overflow: unset !important;
 
                 > .nav {

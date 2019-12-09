@@ -1,7 +1,7 @@
 <template>
   <div class="card">
-    <transition name="list">
-      <nuxt-link :to="`/article/${encodeURIComponent(portfolio.title.replace(/ /gi, '―'))}`">
+    <nuxt-link :to="`/article/${encodeURIComponent(portfolio.title.replace(/ /gi, '―'))}`">
+      <transition name="list">
         <div v-show="show" class="container" :title="portfolio.title">
           <img class="is_main_image" src="/static/img/tab.png" alt="추천" title="바쁘시면 이거라도.." v-if="portfolio.isMain" />
           <div class="hiddenWrapper">
@@ -16,8 +16,8 @@
             </div>
           </div>
         </div>
-      </nuxt-link>
-    </transition>
+      </transition>
+    </nuxt-link>
   </div>
 </template>
 

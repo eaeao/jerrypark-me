@@ -86,7 +86,7 @@
           a {
             position: absolute;
             width: 50px;
-            background-color: unset;
+            background-color: transparent;
             color: #797e8a;
             line-height: normal;
             cursor: pointer;

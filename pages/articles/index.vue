@@ -4,7 +4,8 @@
       <div v-show="show" class="container">
         <div class="nav">
           <p class="btn_back" @click="goBack" title="뒤로"><i class="material-icons">arrow_back</i> 뒤로</p>
-          <p class="btn_print" v-if="portfolios" @click="print" title="인쇄"><i class="material-icons">print</i></p>
+          <p class="btn_print" v-if="!loadedAllImages" title="인쇄"><loading /></p>
+          <p class="btn_print" v-else @click="print" title="인쇄"><i class="material-icons">print</i></p>
         </div>
         <article-component
           v-if="!portfolios"
@@ -15,6 +16,7 @@
           v-for="(portfolio, index) in portfolios"
           :key="index"
           :portfolio="portfolio"
+          :loadedImage="loadedImage"
         />
       </div>
     </transition>
@@ -25,6 +27,7 @@
     import {mapActions} from 'vuex'
     import {getPortfolios} from '~/store/api'
     import Article from '~/components/article/index'
+    import Loading from '~/components/loading'
 
     export default {
         head() {
@@ -48,12 +51,14 @@
             } : {}
         },
         components: {
-            'article-component': Article
+            'article-component': Article,
+            'loading': Loading,
         },
         data() {
             return {
                 show: false,
-                portfolios: null
+                portfolios: null,
+                loadedImages: []
             }
         },
         asyncData({params, from, error}) {
@@ -66,18 +71,23 @@
                         error({statusCode: 404, message: 'Article not found'})
                     }
                 }
-                return {show: !from, portfolios}
+                return {show: !from, portfolios,loadedImages: []}
             })
         },
         computed: {
             category() {
                 return this.$store.state.category;
+            },
+            loadedAllImages() {
+                return this.portfolios
+                    ? this.loadedImages.length === this.portfolios.map(ele => ele.PortfolioImages.filter(_ele => !_ele.isHidden).length).reduce((a, v) => a+v)
+                    : false
             }
         },
         watch: {
-            portfolios(_portfolios) {
-                if (_portfolios) {
-                    setTimeout(() => { this.print(); }, 1000)
+            loadedAllImages(_bool) {
+                if (_bool) {
+                    setTimeout(() => { this.print(); }, 100)
                 }
             }
         },
@@ -103,6 +113,11 @@
                     this.$router.push(self.dataset.href);
                 } else {
                     window.open(self.dataset.href, self.target);
+                }
+            },
+            loadedImage(url) {
+                if (this.loadedImages.indexOf(url) === -1) {
+                    this.loadedImages.push(url)
                 }
             },
             ...mapActions({

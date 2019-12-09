@@ -11,7 +11,7 @@
       <div class="images_bg"></div>
       <div class="images_content">
         <a v-for="(_img, idx) in portfolioImages" :key="idx" @click="clickImage ? clickImage(idx) : null">
-          <img :src="`https://jerrypark.me/media/${_img.src}`" :alt="`${portfolio.title}_${idx}`"/>
+          <img :src="`https://jerrypark.me/media/${_img.src}`" :alt="`${portfolio.title}_${idx}`" @load="_loadedImage(_img.src)"/>
         </a>
       </div>
     </div>
@@ -39,13 +39,18 @@
 
 <script>
   export default {
-      props: ['portfolio', 'clickImage', 'clickCategory'],
+      props: ['portfolio', 'clickImage', 'clickCategory', 'loadedImage'],
       computed: {
           contents() {
               return this.portfolio ? this.$markdown.toHTML(this.portfolio.con) : ""
           },
           portfolioImages() {
               return this.portfolio ? this.portfolio.PortfolioImages.filter(ele => !ele.isHidden) : []
+          }
+      },
+      methods: {
+          _loadedImage(url) {
+              if(this.loadedImage) this.loadedImage(url)
           }
       }
   }
