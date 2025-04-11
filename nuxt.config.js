@@ -1,5 +1,6 @@
 module.exports = {
-  mode: 'universal',
+  telemetry: false,
+  srcDir: 'src',
   /*
   ** Headers of the page
   */
@@ -40,13 +41,11 @@ module.exports = {
       }
     }
   },
-  modules: ['nuxt-material-design-icons'],
+  modules: [
+    'nuxt-material-design-icons'
+  ],
   plugins: [
-    // ssr: false to only include it on client-side
-    {src: '~plugins/global.js', ssr: true},
-    {src: '~plugins/markdown.js', ssr: true},
-    {src: '~plugins/ga.js', ssr: false},
-    {src: '~plugins/hotjar.js', ssr: false}
+    {src: '~/plugins/markdown.js', ssr: true}
   ]
 }
 
