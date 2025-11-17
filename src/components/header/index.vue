@@ -1,15 +1,39 @@
 <template>
   <header class="head-content">
-    <router-link to="/" exact><img class="flyers_logo" src="/static/img/flyers.png" alt="JERRYPARK.ME"></router-link>
+    <router-link to="/" exact>
+      <img class="flyers_logo" src="/static/img/flyers.png" alt="JERRYPARK.ME">
+    </router-link>
     <ul class="menu">
       <li>
-        <a :class="{'active': category === 'ALL'}" @click="clickCategory('/')">ALL</a>
+        <router-link
+          exact
+          to="/"
+          :class="{'active': category === 'ALL'}"
+          :aria-current="category === 'ALL' ? 'page' : null"
+        >
+          ALL
+        </router-link>
       </li>
       <li v-for="_category in categories" :key="_category.index">
-        <a :class="{'active': category === _category.title}"
-           @click="clickCategory(`/${_category.title.toLowerCase()}/`)">{{ _category.title }}</a>
+        <router-link
+          exact
+          :to="`/${_category.title.toLowerCase()}/`"
+          :class="{'active': category === _category.title}"
+          :aria-current="category === _category.title ? 'page' : null"
+        >
+          {{ _category.title }}
+        </router-link>
       </li>
-      <li class="print"><a title="인쇄" @click="goArticles"><i class="material-icons">print</i></a></li>
+      <li class="print">
+        <router-link
+          exact
+          to="/articles/"
+          title="인쇄"
+          aria-label="인쇄 페이지로 이동"
+        >
+          <i class="material-icons">print</i>
+        </router-link>
+      </li>
     </ul>
   </header>
 </template>
@@ -24,14 +48,6 @@
             },
             category() {
                 return this.$store.state.category;
-            }
-        },
-        methods: {
-            clickCategory(_url) {
-                this.$router.push({path: _url})
-            },
-            goArticles() {
-                this.$router.push({path: '/articles/'})
             }
         }
     }
