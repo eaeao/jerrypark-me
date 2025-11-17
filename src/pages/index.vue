@@ -6,7 +6,7 @@
         Jerry Park의 최신 포트폴리오 카드 목록입니다. 각 카드는 상세 페이지로 이동하는 크롤링 가능한 링크를 제공합니다.
       </p>
     </header>
-    <div class="seo-links">
+    <div class="seo-links sr-only">
       <ul class="seo-link-list">
         <li v-for="(portfolio, index) in portfolios" :key="`seo-link-${index}`">
           <nuxt-link

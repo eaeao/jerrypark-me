@@ -6,7 +6,7 @@
         <list-content :portfolios="portfolios"/>
         <nuxt/>
       </main>
-      <footer aria-label="저작권 및 추가 정보">
+      <footer class="sr-only" aria-label="저작권 및 추가 정보">
       </footer>
     </div>
   </div>
@@ -51,6 +51,18 @@
     min-height: 100vh;
     padding: 0 20px;
     box-sizing: border-box;
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
 
     .container {
       max-width: 1180px;
