@@ -1,13 +1,13 @@
 <template>
   <div class="wrap">
     <div class="container">
-      <div class="content">
-        <head-content/>
+      <head-content/>
+      <main class="content" id="main" tabindex="-1">
         <list-content :portfolios="portfolios"/>
         <nuxt/>
-        <footer>
-        </footer>
-      </div>
+      </main>
+      <footer aria-label="저작권 및 추가 정보">
+      </footer>
     </div>
   </div>
 </template>
@@ -47,30 +47,25 @@
   $break-small: 1200px;
 
   .wrap {
-    margin-left: auto;
-    margin-right: auto;
     width: 100%;
-    height: 100%;
+    min-height: 100vh;
+    padding: 0 20px;
 
     .container {
-      position: relative;
-      width: 100%;
-      z-index: 0;
-      text-align: left;
+      max-width: 1180px;
+      margin: 0 auto;
       padding-top: 50px;
+      display: flex;
+      flex-direction: column;
+      text-align: left;
 
       .content {
-        position: relative;
-        width: 1180px;
-        left: 50%;
-        margin-left: -590px;
-        text-align: center;
+        width: 100%;
+        text-align: left;
+      }
 
-        @media screen and (max-width: $break-small) {
-          width: 100%;
-          left: 0;
-          margin-left: 0;
-        }
+      footer {
+        margin-top: auto;
       }
     }
   }
@@ -104,18 +99,19 @@
 
       .wrap {
         width: auto !important;
+        padding: 0 !important;
 
         > .container {
           padding: 0 !important;
 
+          > .head-content {
+            display: none;
+          }
+
           > .content {
             width: 100% !important;
-            left: 0 !important;
             margin: 0 !important;
-
-            > .head-content {
-              display: none;
-            }
+            padding: 0 !important;
 
             > .list-content {
               display: none;
@@ -140,7 +136,6 @@
 
                 > .content {
                   width: auto !important;
-                  left: 0 !important;
                   margin: 0 !important;
                   padding: 0 !important;
                   page-break-before: always;
