@@ -88,7 +88,6 @@
                 show: false,
                 portfolio: null,
                 selectedImageIndex: -1,
-                lastKnownPath: '',
                 lastHash: '',
                 hashChangeHandler: null
             }
@@ -173,20 +172,21 @@
             strip(con) {
                 return `${con}`.replace(/<[^>]*>?/gm, '').replace(/\r?\n/gm, ' ');
             },
-            isSameRoutePath() {
-              const currentPath = window.location.pathname;
+            isSameRoutePath(targetPath) {
+              const currentPath = targetPath || window.location.pathname;
               const normalizedCurrent = currentPath.endsWith('/') && currentPath !== '/' ? currentPath.slice(0, -1) : currentPath;
               const routePath = this.$route.path.endsWith('/') && this.$route.path !== '/' ? this.$route.path.slice(0, -1) : this.$route.path;
               return normalizedCurrent === routePath;
             },
             handlePopstate() {
-              if (this.isSameRoutePath()) {
-                this.lastKnownPath = window.location.pathname;
-                return;
+              const currentHash = window.location.hash || '';
+              if (currentHash !== this.lastHash) {
+                  this.handleHashChange();
+                  return;
               }
-              this.lastKnownPath = window.location.pathname;
-              window.history.pushState(null, null, window.location.href);
-              this.goBack();
+              if (this.isSameRoutePath()) {
+                  this.goBack();
+              }
             },
             scrollToTop() {
               if (!process.client) return;
@@ -212,7 +212,6 @@
         },
         mounted() {
             if (window) {
-                this.lastKnownPath = window.location.pathname;
                 this.lastHash = window.location.hash || '';
                 // Prevent browser back button
                 window.history.pushState(null, null, window.location.href);

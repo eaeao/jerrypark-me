@@ -276,15 +276,18 @@
       }
     }
   }
-
+</style>
+<style lang="scss">
   .body-anchor {
-    color: inherit;
+    color: #333;
+    cursor: default;
     text-decoration: none;
     position: relative;
 
     &:hover,
     &:focus {
-      text-decoration: underline;
+      color: #333;
+      text-decoration: none;
     }
   }
 </style>
