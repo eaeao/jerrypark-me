@@ -1,5 +1,5 @@
 <template>
-  <main class="article">
+  <main class="article" itemscope itemtype="https://schema.org/Article">
     <transition name="slide-fade" v-on:after-leave="afterLeave">
       <div v-show="show" class="container">
         <div class="nav">
@@ -21,24 +21,63 @@
 
     export default {
         head() {
-            return this.portfolio ? {
+            if (!this.portfolio) {
+                return {}
+            }
+            const description = this.metaDescription
+            const image = this.primaryImage
+            const url = this.canonicalUrl
+            return {
                 title: `[${this.portfolio.category.title}] ${this.portfolio.title} | JERRYPARK.ME`,
                 meta: [
                     {
-                        title: `[${this.portfolio.category.title}] ${this.portfolio.title}`,
-                        keywords: `[${this.portfolio.category.title}] ${this.portfolio.title}`.split(' ').join(', '),
-                        author: 'JerryPark, eaeao, 박동혁',
-                        description: this.strip(this.contents).slice(0, 160),
-                        content: this.strip(this.contents).slice(0, 160)
+                        hid: 'description',
+                        name: 'description',
+                        content: description
                     },
-                    { property: 'og:image', content: this.portfolio.PortfolioImages ? `https://jerrypark.me/media/${this.portfolio.PortfolioImages[0].src}` : 'https://dev.jerrypark.me/static/img/jerrypark_cap.png' },
-                    { property: 'og:type', content: 'website' },
+                    {
+                        name: 'keywords',
+                        content: `[${this.portfolio.category.title}] ${this.portfolio.title}`.split(' ').join(', ')
+                    },
+                    { name: 'author', content: 'JerryPark, eaeao, 박동혁' },
+                    { property: 'og:image', content: image },
+                    { property: 'og:type', content: 'article' },
                     { property: 'og:site_name', content: 'JERRYPARK.ME' },
-                    { property: 'og:title', content: `[${this.portfolio.category.title}] ${this.portfolio.title}`, },
-                    { property: 'og:description', content: this.strip(this.contents).slice(0, 160), },
-                    { property: 'og:url', content: `https://jerrypark.me${this.$route.path}` }
+                    { property: 'og:title', content: `[${this.portfolio.category.title}] ${this.portfolio.title}` },
+                    { property: 'og:description', content: description },
+                    { property: 'og:url', content: url }
+                ],
+                link: [
+                    { rel: 'canonical', href: url }
+                ],
+                script: [
+                    {
+                        type: 'application/ld+json',
+                        json: {
+                            "@context": "https://schema.org",
+                            "@type": "Article",
+                            "headline": this.portfolio.title,
+                            "description": description,
+                            "image": image,
+                            "author": {
+                                "@type": "Person",
+                                "name": "DongHyuk Park"
+                            },
+                            "datePublished": this.portfolio.date,
+                            "articleSection": this.portfolio.category.title,
+                            "url": url,
+                            "publisher": {
+                                "@type": "Organization",
+                                "name": "JERRYPARK.ME",
+                                "logo": {
+                                    "@type": "ImageObject",
+                                    "url": "https://jerrypark.me/static/img/jerrypark_cap.png"
+                                }
+                            }
+                        }
+                    }
                 ]
-            } : {}
+            }
         },
         components: {
             'article-component': Article,
@@ -74,6 +113,21 @@
             },
             portfolioImages() {
                 return this.portfolio ? this.portfolio.PortfolioImages.filter(ele => !ele.isHidden) : []
+            },
+            primaryImage() {
+                if (!this.portfolio || !this.portfolio.PortfolioImages) {
+                    return 'https://dev.jerrypark.me/static/img/jerrypark_cap.png'
+                }
+                const visible = this.portfolio.PortfolioImages.find(img => !img.isHidden)
+                return visible
+                    ? `https://jerrypark.me/media/${visible.src}`
+                    : 'https://dev.jerrypark.me/static/img/jerrypark_cap.png'
+            },
+            metaDescription() {
+                return this.strip(this.contents).slice(0, 160)
+            },
+            canonicalUrl() {
+                return `https://jerrypark.me${this.$route.path}`
             }
         },
         watch: {
@@ -110,13 +164,6 @@
                     }
                 })
             },
-            clickA(self) {
-                if (!self.target) {
-                    this.$router.push(self.dataset.href);
-                } else {
-                    window.open(self.dataset.href, self.target);
-                }
-            },
             clickImage(index) {
                 this.$router.push({query: {image: index}})
             },
@@ -133,7 +180,6 @@
         },
         mounted() {
             if (window) {
-                window.click_a = this.clickA;
                 // Prevent browser back button
                 window.history.pushState(null, null, window.location.href);
                 window.addEventListener('popstate', this.handlePopstate);

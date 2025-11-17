@@ -1,27 +1,54 @@
 <template>
-  <div class="content" v-if="portfolio">
+  <div
+    class="content"
+    v-if="portfolio"
+    itemscope
+    itemtype="https://schema.org/CreativeWork"
+    itemprop="mainEntity"
+  >
     <div class="header">
-      <H1 class="title">{{ portfolio.title }}</H1>
+      <H1 class="title" itemprop="headline">{{ portfolio.title }}</H1>
       <div class="info">
-        <a class="category" @click="clickCategory ? clickCategory : null">{{ portfolio.category && portfolio.category.title }}</a>
-        <p class="date">{{ portfolio.date }}</p>
+        <button
+          class="category"
+          type="button"
+          @click="clickCategory ? clickCategory : null"
+          :aria-label="`${portfolio.category && portfolio.category.title} 카테고리 목록 보기`"
+        >
+          {{ portfolio.category && portfolio.category.title }}
+        </button>
+        <p class="date">
+          <time :datetime="isoDate" itemprop="datePublished">{{ portfolio.date }}</time>
+        </p>
       </div>
     </div>
-    <div class="images">
+    <div class="images" itemprop="image">
       <div class="images_bg"></div>
       <div class="images_content">
-        <a v-for="(_img, idx) in portfolioImages" :key="idx" @click="clickImage ? clickImage(idx) : null">
-          <img :src="`https://jerrypark.me/media/${_img.src}`" :alt="`${portfolio.title}_${idx}`" @load="_loadedImage(_img.src)"/>
-        </a>
+        <button
+          v-for="(_img, idx) in portfolioImages"
+          :key="idx"
+          class="image_button"
+          type="button"
+          @click="clickImage ? clickImage(idx) : null"
+          :aria-label="`${portfolio.title} 이미지 ${idx + 1} 크게 보기`"
+        >
+          <img
+            :src="`https://jerrypark.me/media/${_img.src}`"
+            :alt="`${portfolio.title} 이미지 ${idx + 1}`"
+            loading="lazy"
+            @load="_loadedImage(_img.src)"
+          />
+        </button>
       </div>
     </div>
-    <div class="body" v-html="contents"></div>
+    <div class="body" v-html="contents" itemprop="articleBody"></div>
   </div>
   <div class="content loading" v-else>
     <div class="header">
       <H1 class="title"></H1>
       <div class="info">
-        <a class="category"></a>
+        <span class="category"></span>
         <p class="date"></p>
       </div>
     </div>
@@ -39,18 +66,81 @@
 
 <script>
   export default {
+      inheritAttrs: false,
       props: ['portfolio', 'clickImage', 'clickCategory', 'loadedImage'],
       computed: {
           contents() {
-              return this.portfolio ? this.$markdown.toHTML(this.portfolio.con) : ""
+              if (!this.portfolio) {
+                  return ""
+              }
+              return this.addAnchors(this.$markdown.toHTML(this.portfolio.con))
           },
           portfolioImages() {
               return this.portfolio ? this.portfolio.PortfolioImages.filter(ele => !ele.isHidden) : []
+          },
+          isoDate() {
+              if (!this.portfolio || !this.portfolio.date) {
+                  return ''
+              }
+              const date = new Date(this.portfolio.date)
+              if (isNaN(date.getTime())) {
+                  return this.portfolio.date
+              }
+              return date.toISOString().split('T')[0]
           }
       },
       methods: {
           _loadedImage(url) {
               if(this.loadedImage) this.loadedImage(url)
+          },
+          addAnchors(html) {
+              if (!html) return ""
+              const slugStore = {}
+              const hasHeading = /<h2(\s|>)/i.test(html)
+              if (hasHeading) {
+                  return html.replace(/<h2([^>]*)>([\s\S]*?)<\/h2>/gi, (match, attrs = '', inner) => {
+                      const pureText = this.stripHtml(inner).trim()
+                      if (!pureText) {
+                          return match
+                      }
+                      let existingIdMatch = attrs.match(/\sid\s*=\s*["']([^"']+)["']/i)
+                      let slug = existingIdMatch ? existingIdMatch[1] : this.slugify(pureText, slugStore)
+                      if (existingIdMatch) {
+                          slugStore[slug] = true
+                      } else {
+                          attrs = `${attrs} id="${slug}"`
+                      }
+                      const normalizedAttrs = attrs.trim().replace(/\s+/g, ' ')
+                      const attrString = normalizedAttrs ? ` ${normalizedAttrs}` : ''
+                      return `<h2${attrString}><a class="body-anchor" href="#${slug}" aria-label="${pureText} 섹션으로 이동">${inner}</a></h2>`
+                  })
+              }
+              return html.replace(/<strong>([\s\S]*?)<\/strong>/gi, (match, text) => {
+                  const pureText = this.stripHtml(text).trim()
+                  if (!pureText) {
+                      return match
+                  }
+                  const slug = this.slugify(pureText, slugStore)
+                  return `<a id="${slug}" class="body-anchor" href="#${slug}" aria-label="${pureText} 섹션으로 이동"><strong>${text}</strong></a>`
+              })
+          },
+          slugify(text, store) {
+              const base = text
+                  .normalize('NFD')
+                  .replace(/[\u0300-\u036f]/g, '')
+                  .toLowerCase()
+                  .replace(/[^a-z0-9가-힣]+/g, '-')
+                  .replace(/^-+|-+$/g, '') || 'section'
+              let slug = base
+              let counter = 2
+              while (store[slug]) {
+                  slug = `${base}-${counter++}`
+              }
+              store[slug] = true
+              return slug
+          },
+          stripHtml(value) {
+              return `${value}`.replace(/<[^>]*>?/gm, '')
           }
       }
   }
@@ -91,6 +181,13 @@
         .category {
           margin-right: 20px;
           font-weight: bold;
+          background: transparent;
+          border: none;
+          color: #0264b3;
+          cursor: pointer;
+          padding: 0;
+          font: inherit;
+          text-decoration: underline;
         }
       }
     }
@@ -118,13 +215,23 @@
         height: 100%;
         display: inline-table;
 
-        img {
+        .image_button {
           max-width: 362px;
           max-height: 234px;
           margin-right: 20px;
           margin-bottom: 20px;
-          border: 1px solid #e6e6e6;
+          border: 0;
+          padding: 0;
+          background: transparent;
           float: left;
+          cursor: pointer;
+          font: inherit;
+
+          img {
+            width: 100%;
+            max-height: 234px;
+            border: 1px solid #e6e6e6;
+          }
 
           @media screen and (max-width: $break-small) {
             max-width: 100%;
@@ -167,6 +274,17 @@
           margin-bottom: 5px;
         }
       }
+    }
+  }
+
+  .body-anchor {
+    color: inherit;
+    text-decoration: none;
+    position: relative;
+
+    &:hover,
+    &:focus {
+      text-decoration: underline;
     }
   }
 </style>

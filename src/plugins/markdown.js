@@ -371,6 +371,30 @@ import Vue from 'vue'
     return content.join("\n\n");
   };
 
+  function applyLinkMeta(metaString, attrs) {
+    if (!metaString) return;
+    var metaParts = metaString.split("|").map(function (part) {
+      return part.trim();
+    }).filter(function (part) {
+      return part.length;
+    });
+    metaParts.forEach(function (info) {
+      var lower = info.toLowerCase();
+      if (["_blank", "_self", "_parent", "_top"].indexOf(lower) > -1) {
+        attrs.target = lower;
+        if (lower === "_blank" && !attrs.rel) {
+          attrs.rel = "noopener noreferrer";
+        }
+      }
+      else if (info.indexOf("rel=") === 0) {
+        attrs.rel = info.replace(/^rel=/, "");
+      }
+      else if (!attrs.title) {
+        attrs.title = info;
+      }
+    });
+  }
+
 
   /**
    *  toHTMLTree( markdown, [dialect] ) -> JsonML
@@ -533,7 +557,7 @@ import Vue from 'vue'
           // add in the href and title, if present
           attrs.href = ref.href;
           if (ref.title)
-            attrs.title = ref.title;
+            applyLinkMeta(ref.title, attrs);
 
           // get rid of the unneeded original text
           delete attrs.original;
@@ -1292,10 +1316,10 @@ import Vue from 'vue'
           // Process escapes only
           url = this.dialect.inline.__call__.call(this, url, /\\/)[0];
 
-          attrs = {'data-href': url || ""};
-          if (m[3] !== undefined)
-            attrs.target = m[3];
-          attrs.onclick = "click_a(this)";
+          attrs = {href: url || ""};
+          if (m[3] !== undefined) {
+            applyLinkMeta(m[3], attrs);
+          }
 
           link = ["link", attrs].concat(children);
           return [consumed, link];

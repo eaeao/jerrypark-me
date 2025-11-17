@@ -108,13 +108,6 @@
                     }
                 })
             },
-            clickA(self) {
-                if (!self.target) {
-                    this.$router.push(self.dataset.href);
-                } else {
-                    window.open(self.dataset.href, self.target);
-                }
-            },
             loadedImage(url) {
                 if (this.loadedImages.indexOf(url) === -1) {
                     this.loadedImages.push(url)
@@ -125,9 +118,6 @@
             })
         },
         mounted() {
-            if (window) {
-                window.click_a = this.clickA;
-            }
             if (!this.portfolios) {
                 this.getPortfolio()
             }
