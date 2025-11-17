@@ -57,10 +57,15 @@
   $break-small: 1200px;
 
   .head-content {
-    height: 34px;
+    min-height: 34px;
     padding: 0 15px 20px 15px;
     border-bottom: 1px solid #d9dee7;
     text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
 
     .flyers_logo {
       position: relative;
@@ -68,21 +73,26 @@
       top: -6px;
 
       &:hover {
-        filter: brightness(150%);
-        filter: contrast(80%);
+        filter: brightness(1.1) contrast(.95);
       }
     }
 
     .menu {
-      display: table;
-      float: right;
-      line-height: 35px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      line-height: 1.3;
+      margin: 0;
+      padding: 0;
+      list-style: none;
 
       li {
-        display: table-cell;
-        padding: 0 3px;
+        display: flex;
 
         a {
+          display: inline-flex;
+          align-items: center;
           background-color: #797e8a;
           color: #FFF;
           padding: 5px 10px;
@@ -96,18 +106,11 @@
         }
 
         &.print {
-          position: relative;
-          width: 50px;
-          padding: 0;
-
           a {
-            position: absolute;
-            width: 50px;
             background-color: transparent;
             color: #797e8a;
             line-height: normal;
             cursor: pointer;
-            top: -5px;
             text-align: center;
 
             &.active, &:hover {
@@ -125,6 +128,8 @@
     @media screen and (max-width: $break-small) {
       height: auto;
       text-align: center;
+      flex-direction: column;
+      align-items: center;
 
       .flyers_logo {
         top: 0;
@@ -132,16 +137,10 @@
       }
 
       .menu {
-        display: block;
-        float: none;
-        text-align: center;
+        justify-content: center;
 
-        li {
-          display: inline-block;
-
-          &.print {
-            display: none;
-          }
+        li.print {
+          display: none;
         }
       }
     }
