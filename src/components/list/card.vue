@@ -1,38 +1,96 @@
 <template>
-  <div class="card">
-    <nuxt-link :to="`/article/${encodeURIComponent(portfolio.title.replace(/ /gi, '―'))}`">
-      <transition name="list">
-        <div v-show="show" class="container" :title="portfolio.title">
-          <img class="is_main_image" src="/static/img/tab.png" alt="추천" title="바쁘시면 이거라도.." v-if="portfolio.isMain" />
-          <div class="hiddenWrapper">
-            <img class="preview_image" :src="`https://jerrypark.me/media/${portfolio.cover}`" :alt="portfolio.title"
-                 @load="loadImg">
-            <div class="card_body">
-              <p class="title">{{ portfolio.title }}</p>
-              <p class="date">{{ portfolio.date }}</p>
-              <div class="category">
-                <p class="title">{{ portfolio.category && portfolio.category.title }}</p>
-              </div>
+  <article class="card" itemscope itemtype="https://schema.org/CreativeWork">
+    <nuxt-link
+      class="card_link"
+      :to="articlePath"
+      rel="bookmark"
+      :title="linkTitle"
+      :aria-label="linkTitle"
+      itemprop="url"
+    >
+      <div class="container" :class="{'is-loaded': isImageLoaded}" :title="portfolio.title">
+        <img
+          v-if="portfolio.isMain"
+          class="is_main_image"
+          src="/static/img/tab.png"
+          alt="추천 포트폴리오"
+          title="추천 포트폴리오"
+          itemprop="award"
+        />
+        <div class="hiddenWrapper">
+          <img
+            class="preview_image"
+            :src="coverSrc"
+            :alt="imageAlt"
+            loading="lazy"
+            width="255"
+            height="220"
+            @load="handleImgLoad"
+            @error="handleImgError"
+            itemprop="image"
+          >
+          <div class="card_body">
+            <p class="title" itemprop="headline">{{ portfolio.title }}</p>
+            <p class="date">
+              <time :datetime="isoDate" itemprop="datePublished">{{ portfolio.date }}</time>
+            </p>
+            <div class="category">
+              <p class="title" itemprop="about">{{ categoryTitle }}</p>
             </div>
           </div>
         </div>
-      </transition>
+      </div>
     </nuxt-link>
-  </div>
+  </article>
 </template>
 
 <script>
     export default {
         name: "card",
-        props: ['portfolio'],
+        props: {
+            portfolio: {
+                type: Object,
+                required: true
+            }
+        },
         data() {
             return {
-                show: false
+                isImageLoaded: false,
+                hasImageError: false
+            }
+        },
+        computed: {
+            articlePath() {
+                return `/article/${encodeURIComponent(this.portfolio.title.replace(/ /gi, '―'))}`
+            },
+            linkTitle() {
+                const category = this.categoryTitle ? `[${this.categoryTitle}] ` : ''
+                return `${category}${this.portfolio.title} - 상세 보기`
+            },
+            categoryTitle() {
+                return this.portfolio.category && this.portfolio.category.title ? this.portfolio.category.title : ''
+            },
+            imageAlt() {
+                return `${this.portfolio.title} 대표 이미지`
+            },
+            coverSrc() {
+                if (this.hasImageError || !this.portfolio.cover) {
+                    return 'https://jerrypark.me/static/img/jerrypark_cap.png'
+                }
+                return `https://jerrypark.me/media/${this.portfolio.cover}`
+            },
+            isoDate() {
+                const date = new Date(this.portfolio.date)
+                return isNaN(date.getTime()) ? this.portfolio.date : date.toISOString().split('T')[0]
             }
         },
         methods: {
-            loadImg(e) {
-                this.show = true
+            handleImgLoad() {
+                this.isImageLoaded = true
+            },
+            handleImgError() {
+                this.hasImageError = true
+                this.isImageLoaded = true
             }
         }
     }
@@ -45,6 +103,11 @@
     padding: 0 15px 40px;
     display: inline-block;
 
+    .card_link {
+      display: block;
+      text-decoration: none;
+    }
+
     .container {
       position: relative;
       width: 255px;
@@ -55,11 +118,15 @@
       box-shadow: 0 0 40px 0 rgba(0, 0, 0, 0.03);
       cursor: pointer;
       transform: scale(1, 1);
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+      &.is-loaded {
+        box-shadow: 0 0 40px 0 rgba(0, 0, 0, 0.05);
+      }
 
       &:hover {
         box-shadow: 0 0 40px 0 rgba(0, 0, 0, 0.1);
         transform: scale(1.04, 1.04);
-        transition: all 0.1s;
 
         .preview_image {
           transform: scale(1.05, 1.05);
@@ -82,6 +149,8 @@
         width: 100%;
         height: 220px;
         z-index: 0;
+        object-fit: cover;
+        transition: transform 0.2s ease;
       }
 
       .card_body {
@@ -128,15 +197,5 @@
         }
       }
     }
-
-    .list-enter-active {
-      transition: all 0.2s;
-    }
-
-    .list-enter {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-
   }
 </style>
