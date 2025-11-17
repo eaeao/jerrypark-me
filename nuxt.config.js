@@ -46,6 +46,9 @@ module.exports = {
   ],
   plugins: [
     {src: '~/plugins/markdown.js', ssr: true}
-  ]
+  ],
+  router: {
+    middleware: ['https']
+  }
 }
 
