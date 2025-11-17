@@ -87,7 +87,10 @@
             return {
                 show: false,
                 portfolio: null,
-                selectedImageIndex: -1
+                selectedImageIndex: -1,
+                lastKnownPath: '',
+                lastHash: '',
+                hashChangeHandler: null
             }
         },
         asyncData({params, from, error}) {
@@ -170,9 +173,38 @@
             strip(con) {
                 return `${con}`.replace(/<[^>]*>?/gm, '').replace(/\r?\n/gm, ' ');
             },
+            isSameRoutePath() {
+              const currentPath = window.location.pathname;
+              const normalizedCurrent = currentPath.endsWith('/') && currentPath !== '/' ? currentPath.slice(0, -1) : currentPath;
+              const routePath = this.$route.path.endsWith('/') && this.$route.path !== '/' ? this.$route.path.slice(0, -1) : this.$route.path;
+              return normalizedCurrent === routePath;
+            },
             handlePopstate() {
+              if (this.isSameRoutePath()) {
+                this.lastKnownPath = window.location.pathname;
+                return;
+              }
+              this.lastKnownPath = window.location.pathname;
               window.history.pushState(null, null, window.location.href);
               this.goBack();
+            },
+            scrollToTop() {
+              if (!process.client) return;
+              const container = this.$el ? this.$el.querySelector('.container') : document.querySelector('.article .container');
+              if (container && container.scrollTo) {
+                  container.scrollTo({top: 0, behavior: 'instant'});
+              } else {
+                  window.scrollTo({top: 0, behavior: 'instant'});
+              }
+            },
+            handleHashChange() {
+              const currentHash = window.location.hash || '';
+              if (this.lastHash && !currentHash) {
+                  window.requestAnimationFrame(() => {
+                      this.scrollToTop();
+                  });
+              }
+              this.lastHash = currentHash;
             },
             ...mapActions({
                 setCategory: 'setCategory'
@@ -180,20 +212,28 @@
         },
         mounted() {
             if (window) {
+                this.lastKnownPath = window.location.pathname;
+                this.lastHash = window.location.hash || '';
                 // Prevent browser back button
                 window.history.pushState(null, null, window.location.href);
                 window.addEventListener('popstate', this.handlePopstate);
+                this.hashChangeHandler = this.handleHashChange.bind(this);
+                window.addEventListener('hashchange', this.hashChangeHandler);
             }
             if (!this.portfolio) {
                 this.getPortfolio()
             }
             this.show = true;
             this.openImageViewer()
+            this.handleHashChange()
         },
         beforeDestroy() {
             // Remove event listener when component is destroyed
             if (window) {
                 window.removeEventListener('popstate', this.handlePopstate);
+                if (this.hashChangeHandler) {
+                    window.removeEventListener('hashchange', this.hashChangeHandler);
+                }
             }
         }
     }
