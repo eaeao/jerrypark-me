@@ -62,6 +62,19 @@
       clip: rect(0, 0, 0, 0);
       white-space: nowrap;
       border: 0;
+
+      h1 {
+        font-size: 2rem;
+        line-height: 1.2;
+        margin: 0 0 8px;
+        font-weight: 700;
+      }
+
+      p {
+        margin: 0;
+        font-size: 1rem;
+        line-height: 1.5;
+      }
     }
 
     .seo-links {
