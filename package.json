@@ -23,6 +23,7 @@
     "nuxt": "^2.15.8",
     "nuxt-material-design-icons": "^1.0.4",
     "striptags": "^3.1.1",
+    "three": "^0.182.0",
     "vue-carousel": "^0.18.0"
   },
   "devDependencies": {

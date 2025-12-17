@@ -9,6 +9,10 @@
       <footer class="sr-only" aria-label="저작권 및 추가 정보">
       </footer>
     </div>
+    <!-- 3D 종이비행기 오버레이 (클라이언트 전용) -->
+    <client-only>
+      <paper-airplane/>
+    </client-only>
   </div>
 </template>
 
@@ -16,11 +20,13 @@
     import {mapActions} from 'vuex'
     import Header from '~/components/header/index'
     import List from '~/components/list/index'
+    import PaperAirplane from '~/components/paperAirplane/index'
 
     export default {
         components: {
             'head-content': Header,
-            'list-content': List
+            'list-content': List,
+            'paper-airplane': PaperAirplane
         },
         computed: {
             portfolios() {
