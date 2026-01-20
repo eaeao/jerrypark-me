@@ -34,6 +34,26 @@ export default {
     }
   },
   methods: {
+    // 화면 크기에 따라 비행기 크기(스케일)를 조정 (모바일에서 너무 작아 보이는 문제 대응)
+    // - 데스크탑: 0.20
+    // - 모바일: 0.36 (더 크게)
+    updateAirplaneScale() {
+      if (!process.client || !this.airplane) return
+      const width = window.innerWidth
+      const isMobile = width <= 768
+
+      // 모바일은 화면이 작을수록 더 작게 느껴지므로 약하게 보간해서 추가로 키움
+      // width=768 -> 0.36, width=360 -> 약 0.40
+      let scale = 0.20
+      if (isMobile) {
+        const t = Math.max(0, Math.min(1, (768 - width) / (768 - 360)))
+        scale = 0.36 + t * 0.04
+      }
+
+      const clamped = Math.max(0.15, Math.min(0.45, scale))
+      this.airplane.scale.set(clamped, clamped, clamped)
+    },
+
     async initThree() {
       // Three.js 동적 임포트 (SSR 호환)
       const THREE = await import('three')
@@ -84,6 +104,7 @@ export default {
       this.createTrail()
       this.setupLights()
       this.bindEvents()
+      this.updateAirplaneScale()
       this.animate()
       
       this.isInitialized = true
@@ -256,8 +277,7 @@ export default {
       this.airplane.add(fakeShadow)
       this.fakeShadow = fakeShadow
       
-      // 비행기 스케일 - 매우 작게 (0.2)
-      this.airplane.scale.set(0.2, 0.2, 0.2)
+      // 비행기 스케일은 updateAirplaneScale()에서 화면 크기에 따라 설정
       
       // 초기 위치
       this.airplane.position.set(0, 0, 0)
@@ -363,6 +383,7 @@ export default {
         this.camera.updateProjectionMatrix()
         
         this.renderer.setSize(width, height)
+        this.updateAirplaneScale()
       }
       
       window.addEventListener('mousemove', this.onMouseMove, { passive: true })
