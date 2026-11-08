@@ -26,7 +26,12 @@
               @slide-click="slideClick"
               @click.stop
             >
-              <img class="image" :src="`https://jerrypark.me/media/${image.src}`"/>
+              <img
+                class="image"
+                :src="`https://jerrypark.me/media/${image.src}`"
+                :alt="`이미지 ${index + 1}`"
+                loading="lazy"
+              />
             </component>
           </component>
         </client-only>
@@ -134,6 +139,13 @@
         .VueCarousel-inner {
           width: 100%;
           height: 100% !important;
+
+          // 사진을 슬라이드 가운데에 놓는다(예전에는 왼쪽에 붙어 보였다).
+          .VueCarousel-slide {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
 
           .image {
             max-width: 90%;
