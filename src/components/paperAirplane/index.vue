@@ -12,6 +12,11 @@
  * - 관성 기반 이동 (force → velocity → position)
  * - slerp 기반 부드러운 회전
  * - 바람을 타는 상승/하강 효과
+ *
+ * 성능:
+ * - 페이지 load 이벤트 뒤 브라우저가 한가할 때 three.js를 불러온다(첫 화면 로드와 경쟁하지 않음).
+ * - '동작 줄이기(prefers-reduced-motion)'를 켠 사용자에게는 띄우지 않는다.
+ * - 매 프레임 계산에 쓰는 벡터/쿼터니언은 미리 만들어 재사용한다.
  */
 export default {
   name: 'PaperAirplane',
@@ -23,17 +28,65 @@ export default {
   },
   mounted() {
     // SSR 환경 체크 - 클라이언트에서만 실행
-    if (process.client) {
-      this.initThree()
+    if (!process.client || this.prefersReducedMotion()) {
+      return
     }
+    this.scheduleInit()
   },
   beforeDestroy() {
     // 컴포넌트 파괴 시 정리
+    this.isDestroyed = true
     if (process.client) {
+      this.cancelScheduledInit()
       this.cleanup()
     }
   },
   methods: {
+    prefersReducedMotion() {
+      return typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    },
+
+    // 첫 화면의 이미지·스크립트 로드와 경쟁하지 않도록 load 이벤트 뒤, 브라우저가 한가할 때 초기화한다.
+    scheduleInit() {
+      const runWhenIdle = () => {
+        this.onWindowLoad = null
+        if (typeof window.requestIdleCallback === 'function') {
+          this.idleCallbackId = window.requestIdleCallback(() => {
+            this.idleCallbackId = null
+            this.initThree()
+          }, { timeout: 2000 })
+        } else {
+          this.idleTimeoutId = window.setTimeout(() => {
+            this.idleTimeoutId = null
+            this.initThree()
+          }, 200)
+        }
+      }
+
+      if (document.readyState === 'complete') {
+        runWhenIdle()
+      } else {
+        this.onWindowLoad = runWhenIdle
+        window.addEventListener('load', this.onWindowLoad, { once: true })
+      }
+    },
+
+    cancelScheduledInit() {
+      if (this.onWindowLoad) {
+        window.removeEventListener('load', this.onWindowLoad)
+        this.onWindowLoad = null
+      }
+      if (this.idleCallbackId && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(this.idleCallbackId)
+        this.idleCallbackId = null
+      }
+      if (this.idleTimeoutId) {
+        window.clearTimeout(this.idleTimeoutId)
+        this.idleTimeoutId = null
+      }
+    },
+
     // 화면 크기에 따라 비행기 크기(스케일)를 조정 (모바일에서 너무 작아 보이는 문제 대응)
     // - 데스크탑: 0.20
     // - 모바일: 0.36 (더 크게)
@@ -55,8 +108,18 @@ export default {
     },
 
     async initThree() {
-      // Three.js 동적 임포트 (SSR 호환)
-      const THREE = await import('three')
+      if (this.isDestroyed || this.isInitialized) return
+
+      let THREE
+      try {
+        // 필요한 클래스만 다시 내보내는 모듈을 동적 임포트 (SSR 호환 + 트리 셰이킹)
+        THREE = await import('./three')
+      } catch (error) {
+        // 청크를 받지 못하면 장식만 생략한다.
+        return
+      }
+      // 기다리는 사이 컴포넌트가 사라졌으면 렌더러를 만들지 않는다.
+      if (this.isDestroyed) return
       
       // 인스턴스 변수로 Three.js 객체 저장 (반응성 불필요)
       this.THREE = THREE
@@ -83,7 +146,8 @@ export default {
       this.currentQuaternion = new THREE.Quaternion()
       this.targetQuaternion = new THREE.Quaternion()
       this.previousPosition = new THREE.Vector3(0, 0, 0)
-      this.lastMoveDirection = null // 이전 이동 방향 (roll 계산용)
+      this.lastMoveDirection = new THREE.Vector3() // 이전 이동 방향 (roll 계산용)
+      this.hasLastMoveDirection = false
       
       // 바람/진동 변수
       this.time = 0
@@ -99,10 +163,31 @@ export default {
       this.raycaster = new THREE.Raycaster()
       this.targetPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0) // z=0 평면
       
-      this.setupScene()
-      this.createAirplane()
-      this.createTrail()
-      this.setupLights()
+      // 매 프레임 계산에 쓰는 임시 객체 (프레임마다 new 하지 않도록 재사용)
+      this.tmp = {
+        orbitTarget: new THREE.Vector3(),
+        toTarget: new THREE.Vector3(),
+        moveDirection: new THREE.Vector3(),
+        lookAtTarget: new THREE.Vector3(),
+        intersectPoint: new THREE.Vector3(),
+        cross: new THREE.Vector3(),
+        axisX: new THREE.Vector3(1, 0, 0),
+        axisZ: new THREE.Vector3(0, 0, 1),
+        pitchQuat: new THREE.Quaternion(),
+        rollQuat: new THREE.Quaternion(),
+        lookObject: new THREE.Object3D()
+      }
+
+      try {
+        this.setupScene()
+        this.createAirplane()
+        this.createTrail()
+        this.setupLights()
+      } catch (error) {
+        // WebGL을 쓸 수 없는 환경이면 장식 없이 넘어간다.
+        this.cleanup()
+        return
+      }
       this.bindEvents()
       this.updateAirplaneScale()
       this.animate()
@@ -126,6 +211,7 @@ export default {
       this.camera.lookAt(0, 0, 0)
       
       // 렌더러 설정 - 투명 배경
+      // 재질이 모두 MeshBasic/LineBasic이라 조명·그림자의 영향을 받지 않으므로 shadow map은 켜지 않는다.
       this.renderer = new THREE.WebGLRenderer({
         antialias: true,
         alpha: true
@@ -133,8 +219,6 @@ export default {
       this.renderer.setClearColor(0x000000, 0) // 완전 투명
       this.renderer.setSize(width, height)
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-      this.renderer.shadowMap.enabled = true
-      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
       
       container.appendChild(this.renderer.domElement)
     },
@@ -205,8 +289,6 @@ export default {
       bodyGeometry.computeVertexNormals()
       
       const body = new THREE.Mesh(bodyGeometry, paperMaterial)
-      body.castShadow = true
-      body.receiveShadow = true
       
       this.airplane.add(body)
 
@@ -309,14 +391,12 @@ export default {
     },
     
     updateTrail() {
-      // 현재 비행기 위치를 트레일에 추가
-      const pos = this.airplane.position.clone()
+      // 현재 비행기 위치를 트레일 맨 앞에 추가 (가득 찼으면 가장 오래된 벡터를 재사용)
+      const pos = this.trailPositions.length >= this.maxTrailLength
+        ? this.trailPositions.pop()
+        : new this.THREE.Vector3()
+      pos.copy(this.airplane.position)
       this.trailPositions.unshift(pos)
-      
-      // 최대 길이 유지
-      if (this.trailPositions.length > this.maxTrailLength) {
-        this.trailPositions.pop()
-      }
       
       // 지오메트리 업데이트
       const positions = this.trailLine.geometry.attributes.position.array
@@ -340,11 +420,6 @@ export default {
       // 메인 디렉셔널 라이트 - 위에서 비추는 느낌
       const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2)
       directionalLight.position.set(5, 10, 7)
-      directionalLight.castShadow = true
-      directionalLight.shadow.mapSize.width = 512
-      directionalLight.shadow.mapSize.height = 512
-      directionalLight.shadow.camera.near = 0.5
-      directionalLight.shadow.camera.far = 50
       this.scene.add(directionalLight)
       
       // 보조 라이트 - 반대편에서 부드럽게
@@ -392,17 +467,14 @@ export default {
     },
     
     updateTargetPosition() {
-      const THREE = this.THREE
-      
       // Raycaster를 사용해 마우스 → 월드 좌표 변환
       // z=0 평면과의 교차점 계산
       this.raycaster.setFromCamera(this.mouse, this.camera)
       
-      const intersectPoint = new THREE.Vector3()
-      this.raycaster.ray.intersectPlane(this.targetPlane, intersectPoint)
+      const hit = this.raycaster.ray.intersectPlane(this.targetPlane, this.tmp.intersectPoint)
       
-      if (intersectPoint) {
-        this.targetPosition.copy(intersectPoint)
+      if (hit) {
+        this.targetPosition.copy(hit)
       }
     },
     
@@ -431,7 +503,7 @@ export default {
     },
     
     updatePhysics(dt) {
-      const THREE = this.THREE
+      const tmp = this.tmp
       
       // === 1. 타겟 위치 부드럽게 보간 (급격한 변화 방지) ===
       const targetLerpFactor = 0.08
@@ -452,7 +524,7 @@ export default {
       const orbitY = Math.sin(this.orbitAngle) * orbitRadius * 0.6 // Y축은 더 납작하게
       
       // 최종 목표 위치 = 부드러운 타겟 + 공전 오프셋
-      const orbitTarget = new THREE.Vector3(
+      const orbitTarget = tmp.orbitTarget.set(
         this.smoothTarget.x + orbitX,
         this.smoothTarget.y + orbitY,
         this.smoothTarget.z
@@ -469,18 +541,15 @@ export default {
       
       // === 4. 관성 기반 이동 (force → velocity → position) ===
       // 목표 방향으로의 힘 계산
-      const toTarget = orbitTarget.clone().sub(this.airplane.position)
+      const toTarget = tmp.toTarget.copy(orbitTarget).sub(this.airplane.position)
       const distance = toTarget.length()
       
-      // 거리에 비례한 힘 (멀수록 강한 힘)
+      // 거리에 비례한 힘 (멀수록 강한 힘), 가속도 = 힘 / 질량 (질량 = 1 가정)
       const forceMagnitude = distance * 3.0 // 힘 계수
-      const force = toTarget.normalize().multiplyScalar(forceMagnitude)
-      
-      // 가속도 = 힘 / 질량 (질량 = 1 가정)
-      this.acceleration.copy(force)
+      this.acceleration.copy(toTarget).normalize().multiplyScalar(forceMagnitude)
       
       // 속도 업데이트: v = v + a * dt
-      this.velocity.add(this.acceleration.clone().multiplyScalar(dt))
+      this.velocity.addScaledVector(this.acceleration, dt)
       
       // 감쇠 (공기 저항) - 속도에 비례한 저항
       const damping = 0.96
@@ -496,14 +565,14 @@ export default {
       this.previousPosition.copy(this.airplane.position)
       
       // 위치 업데이트: p = p + v * dt
-      this.airplane.position.add(this.velocity.clone().multiplyScalar(dt))
+      this.airplane.position.addScaledVector(this.velocity, dt)
     },
     
     updateRotation(dt) {
-      const THREE = this.THREE
+      const tmp = this.tmp
       
       // === 1. 진행 방향 계산 ===
-      const moveDirection = this.airplane.position.clone().sub(this.previousPosition)
+      const moveDirection = tmp.moveDirection.copy(this.airplane.position).sub(this.previousPosition)
       const speed = moveDirection.length()
       
       if (speed < 0.0001) {
@@ -512,37 +581,35 @@ export default {
       }
       
       // 현재 이동 방향 정규화
-      const currentDir = moveDirection.clone().normalize()
+      const currentDir = moveDirection.normalize()
       
       // === 2. 목표 쿼터니언 계산 ===
       // 비행기가 바라볼 방향 (진행 방향 쪽)
-      const lookAtTarget = this.airplane.position.clone().add(currentDir.clone().multiplyScalar(2))
+      const lookAtTarget = tmp.lookAtTarget.copy(this.airplane.position).addScaledVector(currentDir, 2)
       
       // 임시 객체로 lookAt 계산
-      const tempObject = new THREE.Object3D()
-      tempObject.position.copy(this.airplane.position)
-      tempObject.up.set(0, 1, 0)
-      tempObject.lookAt(lookAtTarget)
+      const lookObject = tmp.lookObject
+      lookObject.position.copy(this.airplane.position)
+      lookObject.up.set(0, 1, 0)
+      lookObject.lookAt(lookAtTarget)
       
       // lookAt은 -z 방향을 타겟으로 향하게 하므로
       // 비행기 모델(코가 z+ 방향)에 맞게 보정 불필요 - 이미 진행 방향으로 lookAt 중
       // 목표 쿼터니언 직접 사용
-      this.targetQuaternion.copy(tempObject.quaternion)
+      this.targetQuaternion.copy(lookObject.quaternion)
       
       // === 3. Pitch 조정 (상승/하강에 따른 기수 각도) ===
       const verticalVelocity = this.velocity.y
       // 상승하면 기수가 들림 (X축 음의 방향 회전)
       const pitchAngle = -verticalVelocity * 0.2
-      const pitchQuat = new THREE.Quaternion()
-      pitchQuat.setFromAxisAngle(new THREE.Vector3(1, 0, 0), pitchAngle)
-      this.targetQuaternion.multiply(pitchQuat)
+      tmp.pitchQuat.setFromAxisAngle(tmp.axisX, pitchAngle)
+      this.targetQuaternion.multiply(tmp.pitchQuat)
       
       // === 4. Roll 조정 (선회 시 기울기) ===
       // 이전 이동 방향과 현재 이동 방향의 변화로 선회 계산
-      if (this.lastMoveDirection) {
+      if (this.hasLastMoveDirection) {
         // 이전 방향과 현재 방향의 외적으로 선회 방향 계산
-        const cross = new THREE.Vector3()
-        cross.crossVectors(this.lastMoveDirection, currentDir)
+        const cross = tmp.cross.crossVectors(this.lastMoveDirection, currentDir)
         
         // cross.y > 0이면 오른쪽으로 선회, < 0이면 왼쪽으로 선회
         // 선회 방향의 반대로 기울어짐 (비행기가 안쪽으로 기울어지는 효과)
@@ -551,13 +618,13 @@ export default {
         
         // roll 각도 제한
         const clampedRoll = Math.max(-0.6, Math.min(0.6, rollAngle))
-        const rollQuat = new THREE.Quaternion()
-        rollQuat.setFromAxisAngle(new THREE.Vector3(0, 0, 1), clampedRoll)
-        this.targetQuaternion.multiply(rollQuat)
+        tmp.rollQuat.setFromAxisAngle(tmp.axisZ, clampedRoll)
+        this.targetQuaternion.multiply(tmp.rollQuat)
       }
       
       // 현재 방향 저장 (다음 프레임에서 사용)
-      this.lastMoveDirection = currentDir.clone()
+      this.lastMoveDirection.copy(currentDir)
+      this.hasLastMoveDirection = true
       
       // === 5. Slerp 보간으로 부드러운 회전 ===
       const rotationLerpFactor = 0.08
@@ -601,8 +668,9 @@ export default {
       // 렌더러 정리
       if (this.renderer) {
         this.renderer.dispose()
-        if (this.$refs.container && this.renderer.domElement) {
-          this.$refs.container.removeChild(this.renderer.domElement)
+        const canvas = this.renderer.domElement
+        if (this.$refs.container && canvas && canvas.parentNode === this.$refs.container) {
+          this.$refs.container.removeChild(canvas)
         }
       }
       
@@ -633,4 +701,3 @@ export default {
   }
 }
 </style>
-
