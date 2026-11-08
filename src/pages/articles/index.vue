@@ -1,5 +1,5 @@
 <template>
-  <main class="article">
+  <div class="article">
     <transition name="slide-fade" v-on:after-leave="afterLeave">
       <div v-show="show" class="container">
         <div class="nav">
@@ -17,10 +17,11 @@
           :key="index"
           :portfolio="portfolio"
           :loadedImage="loadedImage"
+          :eagerImages="true"
         />
       </div>
     </transition>
-  </main>
+  </div>
 </template>
 
 <script>
@@ -28,27 +29,34 @@
     import {getPortfolios} from '~/store/api'
     import Article from '~/components/article/index'
     import Loading from '~/components/loading'
+    import {SITE_NAME, SITE_AUTHOR, DEFAULT_OG_IMAGE, absoluteUrl} from '~/utils/site'
+
+    // 인쇄본은 API의 마지막 항목(가장 오래된 프로필)을 맨 앞에 둔다.
+    const moveLastToFront = (portfolios) => {
+        if (!Array.isArray(portfolios) || portfolios.length === 0) {
+            return []
+        }
+        return [portfolios[portfolios.length - 1], ...portfolios.slice(0, portfolios.length - 1)]
+    }
 
     export default {
         head() {
-            return this.portfolios ? {
-                title: `DongHyuk Park's Portfolio | JERRYPARK.ME`,
+            const description = 'Jerry Park(박동혁)의 포트폴리오 전체를 인쇄용으로 모은 페이지입니다.'
+            return {
+                title: `DongHyuk Park's Portfolio | ${SITE_NAME}`,
                 meta: [
-                    {
-                        title: `DongHyuk Park's Portfolio`,
-                        keywords: `DongHyuk Park's Portfolio`,
-                        author: 'JerryPark, eaeao, 박동혁',
-                        description: `DongHyuk Park's Portfolio | JERRYPARK.ME`,
-                        content: `DongHyuk Park's Portfolio | JERRYPARK.ME`
-                    },
-                    { property: 'og:image', content: 'https://dev.jerrypark.me/static/img/jerrypark_cap.png' },
-                    { property: 'og:type', content: 'website' },
-                    { property: 'og:site_name', content: 'JERRYPARK.ME' },
-                    { property: 'og:title', content: `DongHyuk Park's Portfolio`, },
-                    { property: 'og:description', content: 'DongHyuk Park\'s Portfolio | JERRYPARK.ME', },
-                    { property: 'og:url', content: `https://jerrypark.me${this.$route.path}` }
+                    { hid: 'description', name: 'description', content: description },
+                    // 모든 글을 그대로 복제한 인쇄용 페이지라 검색 결과에는 넣지 않는다.
+                    { hid: 'robots', name: 'robots', content: 'noindex, follow' },
+                    { hid: 'author', name: 'author', content: SITE_AUTHOR },
+                    { hid: 'og:image', property: 'og:image', content: DEFAULT_OG_IMAGE },
+                    { hid: 'og:type', property: 'og:type', content: 'website' },
+                    { hid: 'og:site_name', property: 'og:site_name', content: SITE_NAME },
+                    { hid: 'og:title', property: 'og:title', content: 'DongHyuk Park\'s Portfolio' },
+                    { hid: 'og:description', property: 'og:description', content: description },
+                    { hid: 'og:url', property: 'og:url', content: absoluteUrl('/articles/') }
                 ]
-            } : {}
+            }
         },
         components: {
             'article-component': Article,
@@ -61,27 +69,41 @@
                 loadedImages: []
             }
         },
-        asyncData({params, from, error}) {
+        asyncData({from, error}) {
             return getPortfolios().then(({ data }) => {
-                let portfolios = null;
-                if (!from) {
-                    if (data.data.portfolios) {
-                        portfolios = [data.data.portfolios[data.data.portfolios.length - 1], ...data.data.portfolios.slice(0, data.data.portfolios.length - 1)]
-                    } else {
-                        error({statusCode: 404, message: 'Article not found'})
-                    }
+                const portfolios = data && data.data ? data.data.portfolios : null
+                if (!portfolios) {
+                    error({statusCode: 404, message: 'Article not found'})
                 }
-                return {show: !from, portfolios,loadedImages: []}
+                // 페이지 이동 중에도 받아 온 목록을 그대로 쓴다(예전에는 버리고 mounted에서 같은 요청을 한 번 더 보냈다).
+                return {show: !from, portfolios: portfolios ? moveLastToFront(portfolios) : null, loadedImages: []}
+            }).catch(() => {
+                // API 장애·시간 초과: Nuxt 기본 500 페이지 대신 error.vue를 503(일시적 오류)으로 보여 준다.
+                error({statusCode: 503, message: 'Portfolios temporarily unavailable'})
+                return {show: !from, portfolios: null, loadedImages: []}
             })
         },
         computed: {
             category() {
                 return this.$store.state.category;
             },
+            imageSourceCount() {
+                // 같은 주소는 한 번만 센다(loadedImages도 주소 기준으로 중복 없이 쌓인다).
+                const sources = {}
+                const portfolios = this.portfolios || []
+                portfolios.forEach(portfolio => {
+                    (portfolio.PortfolioImages || [])
+                        .filter(image => !image.isHidden)
+                        .forEach(image => { sources[image.src] = true })
+                })
+                return Object.keys(sources).length
+            },
             loadedAllImages() {
-                return this.portfolios
-                    ? this.loadedImages.length === this.portfolios.map(ele => ele.PortfolioImages.filter(_ele => !_ele.isHidden).length).reduce((a, v) => a+v)
-                    : false
+                if (!this.portfolios || this.portfolios.length === 0) {
+                    return false
+                }
+                // 로드가 끝난(실패 포함) 이미지 수가 실제 이미지 주소 수에 닿으면 인쇄할 수 있다.
+                return this.loadedImages.length >= this.imageSourceCount
             }
         },
         watch: {
@@ -103,8 +125,8 @@
             },
             getPortfolio() {
                 getPortfolios().then(({ data }) => {
-                    if (data.data.portfolios) {
-                        this.portfolios = [data.data.portfolios[data.data.portfolios.length - 1], ...data.data.portfolios.slice(0, data.data.portfolios.length - 1)]
+                    if (data && data.data && data.data.portfolios) {
+                        this.portfolios = moveLastToFront(data.data.portfolios)
                     }
                 })
             },

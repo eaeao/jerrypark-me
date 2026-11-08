@@ -28,8 +28,27 @@
 
 <script>
   import {mapActions} from 'vuex'
+  import {SITE_NAME, listPageHead, truncateText} from '~/utils/site'
 
   export default {
+    head() {
+      // ABOUT(프로필·회사 소개)은 프로젝트가 아니므로 분야와 건수에서 뺀다.
+      const count = this.portfolios
+        .filter(portfolio => !(portfolio && portfolio.category && portfolio.category.title === 'ABOUT'))
+        .length
+      const fields = (this.$store.state.categories || [])
+        .map(category => category && category.title)
+        .filter(title => title && title !== 'ABOUT')
+      let description = 'Jerry Park(박동혁)의 포트폴리오 전체 목록입니다.'
+      if (count) {
+        description += ` ${fields.length ? `${fields.join(', ')} 분야 ` : ''}프로젝트 ${count}건을 모았습니다.`
+      }
+      return listPageHead({
+        title: SITE_NAME,
+        description: truncateText(description, 160),
+        path: '/'
+      })
+    },
     computed: {
       portfolios() {
         return this.$store.state.portfolios || [];

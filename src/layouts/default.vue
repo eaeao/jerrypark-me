@@ -3,7 +3,7 @@
     <div class="container">
       <head-content/>
       <main class="content" id="main" tabindex="-1">
-        <list-content :portfolios="portfolios"/>
+        <list-content v-if="!hasError" :portfolios="portfolios"/>
         <nuxt/>
       </main>
       <footer class="sr-only" aria-label="저작권 및 추가 정보">
@@ -34,6 +34,10 @@
             },
             category() {
                 return this.$store.state.category;
+            },
+            hasError() {
+                // 에러 페이지(error.vue)가 이전 카드 목록 아래에 묻혀 안 보이지 않도록, 에러 중에는 목록을 숨긴다.
+                return !!(this.$nuxt && this.$nuxt.nuxt && this.$nuxt.nuxt.err)
             }
         },
         watch: {

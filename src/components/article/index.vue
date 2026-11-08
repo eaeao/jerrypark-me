@@ -36,8 +36,9 @@
           <img
             :src="`https://jerrypark.me/media/${_img.src}`"
             :alt="`${portfolio.title} 이미지 ${idx + 1}`"
-            loading="lazy"
+            :loading="eagerImages ? 'eager' : 'lazy'"
             @load="_loadedImage(_img.src)"
+            @error="_loadedImage(_img.src)"
           />
         </button>
       </div>
@@ -67,7 +68,8 @@
 <script>
   export default {
       inheritAttrs: false,
-      props: ['portfolio', 'clickImage', 'clickCategory', 'loadedImage'],
+      // eagerImages: 인쇄 페이지처럼 모든 이미지가 로드돼야 하는 곳에서 lazy loading을 끈다.
+      props: ['portfolio', 'clickImage', 'clickCategory', 'loadedImage', 'eagerImages'],
       computed: {
           contents() {
               if (!this.portfolio) {
@@ -125,9 +127,12 @@
               })
           },
           slugify(text, store) {
+              // NFD로 라틴 문자의 악센트를 떼어 낸 뒤 NFC로 다시 합친다.
+              // (NFC로 되돌리지 않으면 한글이 자모로 분해된 채 아래 정규식에서 지워져 모든 앵커가 'section'이 된다.)
               const base = text
                   .normalize('NFD')
                   .replace(/[\u0300-\u036f]/g, '')
+                  .normalize('NFC')
                   .toLowerCase()
                   .replace(/[^a-z0-9가-힣]+/g, '-')
                   .replace(/^-+|-+$/g, '') || 'section'
