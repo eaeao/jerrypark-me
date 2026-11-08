@@ -9,7 +9,7 @@ const normalizePortfolios = (rawPortfolios = []) => {
   const others = rawPortfolios.filter(portfolio => portfolio.category && portfolio.category.title !== 'ABOUT');
 
   abouts.sort((a, b) => {
-    return new Date(a.date) > new Date(b.date);
+    return new Date(a.date) - new Date(b.date);
   });
 
   return [...abouts, ...others];
