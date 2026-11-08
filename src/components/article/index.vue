@@ -12,7 +12,7 @@
         <button
           class="category"
           type="button"
-          @click="clickCategory ? clickCategory : null"
+          @click="clickCategory ? clickCategory() : null"
           :aria-label="`${portfolio.category && portfolio.category.title} 카테고리 목록 보기`"
         >
           {{ portfolio.category && portfolio.category.title }}
