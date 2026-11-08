@@ -116,15 +116,20 @@
 
     html, body {
       width: auto;
+      // layout.css의 height: 100% 때문에 body가 한 페이지 높이에 묶이면, 다음 페이지로 밀린 본문이 인쇄되지 않는다.
+      height: auto !important;
       overflow: visible;
       background-color: #FFF;
       padding: 0 15mm;
 
       .wrap {
         width: auto !important;
+        min-height: 0 !important;
         padding: 0 !important;
 
         > .container {
+          // 화면용 flex 레이아웃은 인쇄 페이지 나눔을 브라우저마다 다르게 만들므로 일반 블록으로 바꾼다.
+          display: block !important;
           padding: 0 !important;
 
           > .head-content {
@@ -157,11 +162,20 @@
                   display: none;
                 }
 
+                // 전체 인쇄(/articles/)에서는 두 번째 글부터 새 페이지에서 시작한다.
+                // 첫 글에도 강제 페이지 나눔을 걸면, 앞에 다른 요소(확장 프로그램이 넣은 요소 등)가 있을 때 첫 페이지가 빈다.
+                > .content + .content {
+                  page-break-before: always;
+                  break-before: page;
+                }
+
                 > .content {
+                  // 화면에서는 left: 50% + 음수 margin으로 가운데 정렬하므로, 인쇄할 때는 left도 함께 되돌린다.
+                  // (margin만 0으로 바꾸면 본문이 페이지 가운데부터 시작해 오른쪽이 잘린다)
+                  left: 0 !important;
                   width: auto !important;
                   margin: 0 !important;
                   padding: 0 !important;
-                  page-break-before: always;
                   border: 0 !important;
 
                   > .images {
@@ -173,8 +187,14 @@
 
                     > .images_content {
 
-                      img {
+                      // 사진은 <button class="image_button"> 안에 있으므로 한 줄에 세 장이 되도록 버튼 너비를 제한한다.
+                      // (img에 퍼센트를 주면 버튼 너비가 기준이 되어 사진이 아주 작게 찍힌다)
+                      .image_button {
                         max-width: calc(33% - 20px) !important;
+                      }
+
+                      img {
+                        max-width: 100% !important;
                       }
                     }
                   }

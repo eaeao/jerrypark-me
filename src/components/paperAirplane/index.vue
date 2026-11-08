@@ -700,4 +700,11 @@ export default {
     display: block;
   }
 }
+
+// 인쇄할 때는 장식용 오버레이를 찍지 않는다(고정 요소라 모든 페이지에 반복될 수 있다).
+@media print {
+  .paper-airplane-container {
+    display: none;
+  }
+}
 </style>
