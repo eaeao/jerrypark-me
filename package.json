@@ -19,7 +19,7 @@
     "precommit": "npm run lint"
   },
   "dependencies": {
-    "axios": "0.21.1",
+    "axios": "0.34.0",
     "nuxt": "^2.15.8",
     "nuxt-material-design-icons": "^1.0.4",
     "striptags": "^3.1.1",
@@ -34,5 +34,22 @@
     "eslint-plugin-vue": "^4.0.0",
     "sass": "^1.32.13",
     "sass-loader": "^10.1.1"
+  },
+  "overrides": {
+    "@nuxtjs/youch": {
+      "cookie": "^0.7.0"
+    },
+    "postcss-url": {
+      "minimatch": "^3.1.4"
+    },
+    "@nuxt/loading-screen": {
+      "defu": "^6.1.5"
+    },
+    "external-editor": {
+      "tmp": "^0.2.6"
+    },
+    "cacache": {
+      "tar": "^7.5.21"
+    }
   }
 }
