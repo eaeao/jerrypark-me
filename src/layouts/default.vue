@@ -20,13 +20,13 @@
     import {mapActions} from 'vuex'
     import Header from '~/components/header/index'
     import List from '~/components/list/index'
-    import PaperAirplane from '~/components/paperAirplane/index'
 
     export default {
         components: {
             'head-content': Header,
             'list-content': List,
-            'paper-airplane': PaperAirplane
+            // 장식용이라 첫 화면 스크립트에 넣지 않고 따로 불러온다(<client-only> 안이라 서버 렌더링과 무관).
+            'paper-airplane': () => import('~/components/paperAirplane/index')
         },
         computed: {
             portfolios() {
